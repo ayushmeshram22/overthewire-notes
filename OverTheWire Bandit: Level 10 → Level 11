@@ -1,0 +1,105 @@
+# OverTheWire Bandit: Level 10 → Level 11
+
+## Objective
+Find the password for **bandit11** stored in the file `data.txt`, which contains base64 encoded data.
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit10
+- **Password:** [Use password from Level 9]
+
+```bash
+ssh bandit10@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Examine the File
+Check the contents:
+```bash
+ls -la
+cat data.txt
+```
+
+You'll see base64 encoded text (looks like random letters, numbers, and symbols like `+`, `/`, `=`).
+
+### Step 2: Decode the Base64 Data
+Use the `base64` command with the `-d` (decode) flag:
+
+```bash
+base64 -d data.txt
+```
+
+Or using a pipe:
+```bash
+cat data.txt | base64 -d
+```
+
+**Output:**
+```
+The password is <PASSWORD>
+```
+
+### Alternative: Decode and Save
+If you want to save the decoded output to a file:
+```bash
+base64 -d data.txt > decoded.txt
+cat decoded.txt
+```
+
+## Commands Used
+- `base64 -d` - Decode base64 encoded data
+- `base64 -e` - Encode data to base64 (opposite operation)
+- `cat` - Display file contents
+
+## Key Concepts
+- **Base64 Encoding**: A way to represent binary data in ASCII text format
+- **Decoding**: Converting encoded data back to its original form
+- **Common Use Cases**: Email attachments, embedding images in HTML/CSS, transmitting binary data over text protocols
+
+## Understanding Base64
+Base64 encoding converts binary data into a text format using 64 different ASCII characters:
+- Letters: A-Z, a-z
+- Numbers: 0-9
+- Symbols: +, /
+- Padding: = (used at the end)
+
+**Example:**
+```
+Original: Hello World!
+Base64:   SGVsbG8gV29ybGQh
+```
+
+## Why Base64?
+- Ensures data can be transmitted over text-only protocols
+- Prevents data corruption during transmission
+- Commonly used in email, web APIs, and data storage
+
+## Next Level
+Once you have the password, proceed to Level 11:
+```bash
+ssh bandit11@bandit.labs.overthewire.org -p 2220
+```
+
+## Notes
+- Base64 is encoding, NOT encryption (it provides no security)
+- Anyone can decode base64 data easily
+- The `=` characters at the end are padding
+- Base64 increases data size by approximately 33%
+
+## Quick Reference
+```bash
+# Encode
+echo "Hello World" | base64
+
+# Decode
+echo "SGVsbG8gV29ybGQK" | base64 -d
+```
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [base64 manual](https://man7.org/linux/man-pages/man1/base64.1.html)
+- [Base64 on Wikipedia](https://en.wikipedia.org/wiki/Base64)
