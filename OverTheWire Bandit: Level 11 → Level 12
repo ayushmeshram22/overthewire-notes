@@ -1,0 +1,120 @@
+# OverTheWire Bandit: Level 11 → Level 12
+
+## Objective
+Find the password for **bandit12** stored in the file `data.txt`, where all lowercase and uppercase letters have been rotated by 13 positions (ROT13 cipher).
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit11
+- **Password:** [Use password from Level 10]
+
+```bash
+ssh bandit11@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Examine the File
+Check the contents:
+```bash
+cat data.txt
+```
+
+You'll see text that looks scrambled but readable (ROT13 encoded).
+
+### Step 2: Decode ROT13 Using `tr`
+Use the `tr` (translate) command to rotate the letters back:
+
+```bash
+cat data.txt | tr 'A-Za-z' 'N-ZA-Mn-za-m'
+```
+
+**Breakdown:**
+- `tr` - Translate characters
+- `'A-Za-z'` - Source: All uppercase and lowercase letters
+- `'N-ZA-Mn-za-m'` - Destination: Letters rotated by 13 positions
+  - A→N, B→O, C→P ... M→Z, N→A ... Z→M
+  - a→n, b→o, c→p ... m→z, n→a ... z→m
+
+**Output:**
+```
+The password is <PASSWORD>
+```
+
+### Alternative Methods
+
+#### Using Python (if available):
+```bash
+python3 -c "import codecs; print(codecs.decode(open('data.txt').read(), 'rot13'))"
+```
+
+#### Using an online ROT13 decoder:
+Copy the text and use any ROT13 decoder website (though solving it on the server is preferred for practice).
+
+## Commands Used
+- `tr` - Translate or delete characters
+- `cat` - Display file contents
+- `|` - Pipe operator
+
+## Key Concepts
+- **ROT13 Cipher**: A simple letter substitution cipher that replaces each letter with the letter 13 positions after it in the alphabet
+- **Symmetric Cipher**: Applying ROT13 twice returns the original text
+- **Character Translation**: Using `tr` to map characters
+
+## Understanding ROT13
+ROT13 is a special case of the Caesar cipher, rotating by 13 positions. Since there are 26 letters in the alphabet, ROT13 is its own inverse:
+
+```
+Original:  A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+ROT13:     N O P Q R S T U V W X Y Z A B C D E F G H I J K L M
+```
+
+**Example:**
+```
+Original: Hello World
+ROT13:    Uryyb Jbeyq
+```
+
+## Why ROT13?
+- Historically used in online forums to hide spoilers or offensive content
+- NOT for security (trivially easy to decode)
+- Mainly for obfuscation, not encryption
+- Numbers and special characters remain unchanged
+
+## The `tr` Command Explained
+The translation string `'N-ZA-Mn-za-m'` means:
+- **Uppercase**: N O P Q R S T U V W X Y Z A B C D E F G H I J K L M
+- **Lowercase**: n o p q r s t u v w x y z a b c d e f g h i j k l m
+
+Each letter in `A-Za-z` maps to the corresponding position in `N-ZA-Mn-za-m`.
+
+## Next Level
+Once you have the password, proceed to Level 12:
+```bash
+ssh bandit12@bandit.labs.overthewire.org -p 2220
+```
+
+## Notes
+- ROT13 is NOT encryption, just simple obfuscation
+- Applying ROT13 twice gives you the original text back
+- Only letters are rotated; numbers and symbols stay the same
+- Case is preserved (uppercase stays uppercase)
+
+## Quick Test
+Try encoding something yourself:
+```bash
+echo "Hello World" | tr 'A-Za-z' 'N-ZA-Mn-za-m'
+# Output: Uryyb Jbeyq
+
+# Decode it back
+echo "Uryyb Jbeyq" | tr 'A-Za-z' 'N-ZA-Mn-za-m'
+# Output: Hello World
+```
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [tr manual](https://man7.org/linux/man-pages/man1/tr.1.html)
+- [ROT13 on Wikipedia](https://en.wikipedia.org/wiki/ROT13)
