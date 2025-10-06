@@ -1,0 +1,144 @@
+# OverTheWire Bandit: Level 16 → 17 Walkthrough
+
+## Level Goal
+
+The credentials for the next level can be retrieved by submitting the password of the current level to **a port on localhost in the range 31000 to 32000**. First find out which of these ports have a server listening on them. Then find out which of those speak SSL and which don't. There is only 1 server that will give you the next credentials, the others will simply send back to you whatever you send to it.
+
+## Concepts Covered
+
+- Port scanning with `nmap`
+- SSL/TLS connections
+- Using `openssl s_client`
+- SSH private key authentication
+- File permissions for SSH keys
+
+## Solution
+
+### Step 1: Connect to Level 16
+
+```bash
+ssh bandit16@bandit.labs.overthewire.org -p 2220
+```
+
+Enter the password from level 15.
+
+### Step 2: Scan for Open Ports
+
+Use `nmap` to scan the port range 31000-32000:
+
+```bash
+nmap -p 31000-32000 localhost
+```
+
+This will show you which ports are open. Example output:
+```
+PORT      STATE SERVICE
+31046/tcp open  unknown
+31518/tcp open  unknown
+31691/tcp open  unknown
+31790/tcp open  unknown
+31960/tcp open  unknown
+```
+
+### Step 3: Identify SSL Services
+
+Now scan to determine which ports are using SSL:
+
+```bash
+nmap -sV -p 31000-32000 localhost
+```
+
+The `-sV` flag enables version detection. Look for ports labeled as `ssl` in the output.
+
+### Step 4: Test Each SSL Port
+
+For each SSL-enabled port, connect using `openssl s_client` and submit the current level's password:
+
+```bash
+cat /etc/bandit_pass/bandit16 | openssl s_client -connect localhost:31790 -quiet
+```
+
+Replace `31790` with each SSL port you found.
+
+### Step 5: Identify the Correct Port
+
+- Most ports will simply echo back what you send
+- **One port** will return an RSA private key instead
+
+When you find the right port, you'll receive output like:
+```
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA...
+[key content]
+-----END RSA PRIVATE KEY-----
+```
+
+### Step 6: Save the Private Key
+
+Create a temporary directory and save the key:
+
+```bash
+mkdir /tmp/mykey123
+cd /tmp/mykey123
+```
+
+Connect again and save the output:
+
+```bash
+cat /etc/bandit_pass/bandit16 | openssl s_client -connect localhost:31790 -quiet > sshkey.private
+```
+
+### Step 7: Set Correct Permissions
+
+SSH requires private keys to have restrictive permissions:
+
+```bash
+chmod 600 sshkey.private
+```
+
+### Step 8: Connect to Level 17
+
+Use the private key to connect:
+
+```bash
+ssh -i sshkey.private bandit17@localhost -p 2220
+```
+
+Alternatively, you can connect from outside:
+
+```bash
+ssh -i sshkey.private bandit17@bandit.labs.overthewire.org -p 2220
+```
+
+## Commands Used
+
+- `nmap` - Network exploration tool and port scanner
+- `openssl s_client` - SSL/TLS client program
+- `ssh -i` - SSH with identity file (private key)
+- `chmod` - Change file permissions
+- `cat` - Concatenate and display file contents
+
+## Key Takeaways
+
+1. **Port Scanning**: `nmap` is essential for discovering open ports and services
+2. **Service Detection**: Use `-sV` flag to identify service versions and protocols
+3. **SSL Testing**: Not all open ports use SSL; testing is required
+4. **SSH Keys**: Private keys must have 600 permissions (readable/writable by owner only)
+5. **Persistence**: This level requires testing multiple ports to find the correct one
+
+## Tips
+
+- Use `nmap -sV` instead of basic `nmap` to save time identifying SSL ports
+- Create temporary directories in `/tmp` with unique names to avoid conflicts
+- Remember to clean up your temporary files when done
+- The `-quiet` flag in `openssl s_client` suppresses connection details
+
+## Common Errors
+
+- **Permission denied (publickey)**: Private key permissions are too open - use `chmod 600`
+- **Connection refused**: Testing a non-SSL port with `openssl s_client`
+- **Echo response**: Connected to wrong port - keep testing other SSL ports
+
+---
+
+**Next Level**: Bandit 17 → 18
