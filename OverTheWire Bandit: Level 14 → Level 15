@@ -1,0 +1,194 @@
+# OverTheWire Bandit: Level 14 → Level 15
+
+## Objective
+The password for **bandit15** can be retrieved by submitting the password of the current level (bandit14) to **port 30000 on localhost**.
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit14
+- **Password:** [Use password from Level 13 or SSH key]
+
+```bash
+ssh bandit14@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Get the Current Password
+If you don't already have it:
+```bash
+cat /etc/bandit_pass/bandit14
+```
+
+Copy this password for the next step.
+
+### Step 2: Connect to Port 30000 and Submit Password
+
+#### Method 1: Using `nc` (netcat)
+```bash
+nc localhost 30000
+```
+Then type/paste the bandit14 password and press Enter.
+
+Or in one command:
+```bash
+echo "PASSWORD_HERE" | nc localhost 30000
+```
+
+#### Method 2: Using `telnet`
+```bash
+telnet localhost 30000
+```
+Then type/paste the bandit14 password and press Enter.
+
+#### Method 3: Using `cat` and pipe
+```bash
+cat /etc/bandit_pass/bandit14 | nc localhost 30000
+```
+
+**Output:**
+You'll receive the password for bandit15!
+
+## Commands Used
+- `nc` (netcat) - Network utility for reading/writing network connections
+- `telnet` - User interface to TELNET protocol
+- `cat` - Display file contents
+- `echo` - Display text
+- `|` - Pipe operator
+
+## Key Concepts
+- **Network Communication**: Sending data over TCP/IP
+- **Localhost**: Refers to the local machine (127.0.0.1)
+- **Ports**: Endpoints for network communication
+- **Client-Server Model**: Sending requests to services listening on ports
+- **Netcat**: Swiss Army knife of networking tools
+
+## Understanding Network Ports
+
+### What is a Port?
+A port is a virtual endpoint for network communication. Think of it like an apartment number in a building:
+- **IP Address**: The building address (localhost = 127.0.0.1)
+- **Port**: The apartment number (30000)
+
+### Common Port Numbers
+- **22**: SSH
+- **80**: HTTP (web traffic)
+- **443**: HTTPS (secure web)
+- **3306**: MySQL database
+- **30000**: Custom service (this challenge)
+
+### Port Ranges
+- **0-1023**: Well-known ports (require root)
+- **1024-49151**: Registered ports
+- **49152-65535**: Dynamic/private ports
+
+## Understanding Netcat (nc)
+
+Netcat is a versatile networking tool that can:
+- Connect to remote ports
+- Listen on ports
+- Transfer files
+- Port scanning
+- Create backdoors (ethical hacking)
+
+### Basic Netcat Usage
+```bash
+# Connect to a host and port
+nc hostname port
+
+# Listen on a port (server mode)
+nc -l port
+
+# Send file over network
+nc hostname port < file.txt
+
+# Receive file
+nc -l port > received.txt
+
+# Chat between two machines
+# Machine 1: nc -l 1234
+# Machine 2: nc machine1_ip 1234
+```
+
+## Alternative Tools
+
+### Using `/dev/tcp` (Bash built-in)
+```bash
+cat /etc/bandit_pass/bandit14 > /dev/tcp/localhost/30000
+# Read response
+exec 3<>/dev/tcp/localhost/30000
+cat /etc/bandit_pass/bandit14 >&3
+cat <&3
+```
+
+### Using `curl` (if available)
+```bash
+curl telnet://localhost:30000
+```
+
+### Using Python
+```bash
+python3 -c "
+import socket
+s = socket.socket()
+s.connect(('localhost', 30000))
+s.send(b'PASSWORD\n')
+print(s.recv(1024).decode())
+"
+```
+
+## Troubleshooting
+
+### "Connection refused"
+- Service isn't running on that port
+- Wrong port number
+- Firewall blocking connection
+
+### No response after sending password
+- Make sure to press Enter after the password
+- Check if you copied the complete password
+- Try adding newline: `echo "password" | nc localhost 30000`
+
+### Command not found: nc
+Try alternatives:
+- `ncat localhost 30000`
+- `telnet localhost 30000`
+- Use `/dev/tcp` method
+
+## Next Level
+Once you have the password, proceed to Level 15:
+```bash
+ssh bandit15@bandit.labs.overthewire.org -p 2220
+```
+
+## Notes
+- The service on port 30000 expects the bandit14 password
+- After submitting the correct password, it returns the bandit15 password
+- Netcat is one of the most important tools in networking and security
+- Understanding ports and network communication is crucial for cybersecurity
+
+## Real-World Applications
+- **Port scanning**: Discovering open ports on systems
+- **Banner grabbing**: Identifying services and versions
+- **File transfers**: Quick data exchange
+- **Backdoors**: Remote access (penetration testing)
+- **Debugging**: Testing network services
+- **Chat systems**: Simple communication protocols
+
+## Security Note
+Services listening on ports can be vulnerable if:
+- Not properly authenticated
+- Running outdated software
+- Exposing sensitive information
+- Misconfigured firewalls
+
+Always secure services listening on network ports!
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [netcat manual](https://man7.org/linux/man-pages/man1/ncat.1.html)
+- [TCP/IP Basics](https://en.wikipedia.org/wiki/Internet_protocol_suite)
+- [Port Numbers](https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers)
