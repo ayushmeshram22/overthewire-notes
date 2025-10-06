@@ -1,0 +1,99 @@
+OverTheWire Bandit: Level 9 → Level 10
+
+## Objective
+Find the password for **bandit10** stored in the file `data.txt`. The password is in one of the few human-readable strings, preceded by several `=` characters.
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit9
+- **Password:** [Use password from Level 8]
+
+```bash
+ssh bandit9@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Examine the File
+Check the file type:
+```bash
+ls -la
+file data.txt
+```
+
+You'll see it's a binary/data file, not a regular text file.
+
+### Step 2: Extract Human-Readable Strings
+Use the `strings` command to extract readable text from the binary file:
+
+```bash
+strings data.txt
+```
+
+This outputs all human-readable strings found in the file.
+
+### Step 3: Filter for Lines with Multiple `=` Signs
+Since the password is preceded by several `=` characters, use `grep`:
+
+```bash
+strings data.txt | grep "==="
+```
+
+Or more precisely:
+```bash
+strings data.txt | grep "===="
+```
+
+**Output:**
+You'll see several lines with `===` or more equal signs. Look for the one that appears to be the password (typically the last one or most obvious).
+
+### Alternative: Show More Context
+```bash
+strings data.txt | grep -E "=+"
+```
+
+This uses regex to match one or more `=` characters.
+
+## Commands Used
+- `strings` - Extract printable strings from binary files
+- `grep` - Search for patterns in text
+- `file` - Determine file type
+- `|` - Pipe operator to chain commands
+
+## Key Concepts
+- **Binary vs Text Files**: Not all files are plain text
+- **strings command**: Extracts human-readable text from binary data
+- **Pattern Matching**: Using `grep` to filter results
+- **Data Extraction**: Finding needles in binary haystacks
+
+## Understanding `strings`
+The `strings` command looks for sequences of printable characters (at least 4 by default) within binary files. This is useful for:
+- Finding embedded text in executables
+- Extracting data from corrupted files
+- Reverse engineering
+
+## Next Level
+Once you have the password, proceed to Level 10:
+```bash
+ssh bandit10@bandit.labs.overthewire.org -p 2220
+```
+
+## Notes
+- `data.txt` is a binary file, not plain text
+- Don't use `cat` on binary files - it can mess up your terminal
+- The password is preceded by multiple `=` characters
+- `strings` is essential for extracting text from binary data
+
+## Troubleshooting
+If your terminal gets messed up after accidentally using `cat` on a binary file:
+```bash
+reset
+```
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [strings manual](https://man7.org/linux/man-pages/man1/strings.1.html)
+- [grep manual](https://man7.org/linux/man-pages/man1/grep.1.html)
