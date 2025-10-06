@@ -1,0 +1,131 @@
+# OverTheWire Bandit: Level 1 → Level 2 Complete Walkthrough
+
+## Level Goal
+The password for the next level is stored in a file called `-` located in the home directory.
+
+## Concepts Covered
+- Reading files with special names (dashed filename)
+- Understanding command-line argument parsing
+- File path specifications
+
+## Background Information
+
+### Why is "-" a Problem?
+In Linux/Unix systems, the dash (`-`) character has special meaning in commands. It typically indicates that command-line options or flags will follow. When you try to read a file named `-`, the system interprets it as a flag rather than a filename, causing issues.
+
+For example:
+```bash
+cat -
+```
+This tells `cat` to read from standard input (stdin) instead of treating `-` as a filename.
+
+## Solution Methods
+
+### Method 1: Using Relative Path (Recommended)
+```bash
+cat ./-
+```
+
+**Explanation:**
+- `./` means "current directory"
+- This explicitly tells the command that `-` is a filename in the current directory
+- The `./` prefix prevents `-` from being interpreted as an option
+
+### Method 2: Using Absolute Path
+```bash
+cat /home/bandit1/-
+```
+
+**Explanation:**
+- Provides the full path to the file
+- The absolute path makes it unambiguous that we're referencing a file
+
+### Method 3: Using Redirect/Input Operator
+```bash
+cat < -
+```
+
+**Explanation:**
+- The `<` operator redirects file content as input
+- This forces the shell to treat `-` as a filename
+
+### Method 4: Using Double Dash
+```bash
+cat -- -
+```
+
+**Explanation:**
+- `--` is a convention that signals "end of options"
+- Everything after `--` is treated as an argument, not an option
+- Note: This method doesn't work with all versions of `cat`
+
+## Step-by-Step Walkthrough
+
+### Step 1: Connect to Level 1
+```bash
+ssh bandit1@bandit.labs.overthewire.org -p 2220
+```
+Enter the password you obtained from Level 0.
+
+### Step 2: Verify Your Location
+```bash
+pwd
+```
+Output: `/home/bandit1`
+
+### Step 3: List Files
+```bash
+ls -la
+```
+You should see a file named `-` in the directory.
+
+### Step 4: Read the File
+```bash
+cat ./-
+```
+
+### Step 5: Copy the Password
+The output will be the password for Level 2. Copy it carefully.
+
+### Step 6: Exit and Connect to Level 2
+```bash
+exit
+ssh bandit2@bandit.labs.overthewire.org -p 2220
+```
+Enter the password you just obtained.
+
+## Common Mistakes to Avoid
+
+1. **Trying `cat -` directly** - This will wait for input from stdin
+2. **Forgetting the `./` prefix** - Results in the same stdin issue
+3. **Adding extra spaces** - `cat . / -` won't work; it must be `cat ./-`
+4. **Copy-paste errors** - Ensure you copy the entire password without extra characters
+
+## Key Takeaways
+
+- Files with special characters require careful handling
+- The `./` prefix is useful for files with problematic names
+- Understanding how the shell parses commands is crucial
+- Multiple solutions often exist for the same problem
+
+## Additional Practice
+
+Try these commands to explore further:
+```bash
+# View file without opening it
+less ./-
+
+# Display file with line numbers
+cat -n ./-
+
+# Copy file to a normal name
+cp ./-  normalfile.txt
+cat normalfile.txt
+```
+
+## Next Steps
+Once you have the password, proceed to Level 2 where you'll deal with files containing spaces in their names.
+
+---
+
+**Security Tip:** Always be careful when dealing with files that have unusual names. In real-world scenarios, malicious actors sometimes use special characters in filenames to hide files or cause confusion.
