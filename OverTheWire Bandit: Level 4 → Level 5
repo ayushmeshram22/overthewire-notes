@@ -1,0 +1,186 @@
+# OverTheWire Bandit: Level 4 → Level 5
+
+## Objective
+Find the password for Level 5, which is stored in the only human-readable file in the **inhere** directory.
+
+## Challenge Details
+- **Current Level:** bandit4
+- **Target Level:** bandit5
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **File Location:** ~/inhere/-file??
+- **Key Point:** Only ONE file contains human-readable text
+
+## The Problem
+The inhere directory contains multiple files (named `-file00` through `-file09`). Most contain binary/non-readable data, but one contains ASCII text with the password. You need to identify which file is human-readable.
+
+## Solutions
+
+### Method 1: Using `file` Command (Recommended)
+```bash
+cd inhere
+file ./*
+```
+This identifies the file type of each file. Look for "ASCII text".
+
+### Method 2: Check All Files at Once
+```bash
+cd inhere
+file ./-file*
+```
+Uses wildcard to check all files starting with `-file`.
+
+### Method 3: Using `find` with `file`
+```bash
+find inhere -type f -exec file {} \;
+```
+
+### Method 4: Loop Through Files
+```bash
+cd inhere
+for f in ./*; do file "$f"; done
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit4@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 3.
+
+2. **Navigate to the inhere directory:**
+   ```bash
+   cd inhere
+   ```
+
+3. **List the files:**
+   ```bash
+   ls
+   ```
+   Output: `-file00  -file01  -file02  -file03  -file04  -file05  -file06  -file07  -file08  -file09`
+
+4. **Check file types:**
+   ```bash
+   file ./*
+   ```
+   Output shows something like:
+   ```
+   ./-file00: data
+   ./-file01: data
+   ./-file02: data
+   ./-file03: data
+   ./-file04: data
+   ./-file05: data
+   ./-file06: data
+   ./-file07: ASCII text
+   ./-file08: data
+   ./-file09: data
+   ```
+
+5. **Read the ASCII text file:**
+   ```bash
+   cat ./-file07
+   ```
+
+6. **Copy the password displayed**
+
+7. **Exit and connect to Level 5:**
+   ```bash
+   exit
+   ssh bandit5@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### The `file` Command
+The `file` command determines file types by examining their contents, not just the extension.
+
+Common outputs:
+- `ASCII text` - Human-readable text
+- `data` - Binary or non-text data
+- `executable` - Binary executable
+- `empty` - Empty file
+
+### Why Use `./` Prefix?
+Files starting with `-` (dash) can be confused with command options. Using `./` tells the shell it's a filename:
+- ❌ `cat -file07` - Shell thinks `-file07` is an option
+- ✅ `cat ./-file07` - Clearly a file in current directory
+
+### Alternative: Using Redirection
+```bash
+cat < -file07
+```
+Input redirection doesn't interpret `-` as an option.
+
+## Common Mistakes
+- ❌ Trying `cat -file07` without `./` prefix
+- ❌ Manually checking each file with `cat` (tedious and error-prone)
+- ❌ Not using the `file` command to identify file types
+- ❌ Assuming the filename indicates the content
+
+## Alternative Approaches
+
+### Method 1: Using strings
+```bash
+strings ./* 2>/dev/null
+```
+Extracts readable text from all files (but messier output).
+
+### Method 2: grep for ASCII
+```bash
+file ./* | grep "ASCII text"
+```
+Filters to show only ASCII text files.
+
+### Method 3: One-liner to read the correct file
+```bash
+cat $(file ./* | grep "ASCII text" | cut -d: -f1)
+```
+
+## Learning Outcomes
+- Using the `file` command to identify file types
+- Understanding that filenames don't always indicate content
+- Handling filenames that start with special characters
+- Filtering and identifying specific file types
+- Working with wildcards and globbing
+
+## Tips for Future Levels
+- `file` is your friend for identifying unknown files
+- Always use `./` when dealing with filenames starting with `-`
+- Learn to combine commands with pipes for efficiency
+- Don't assume file content from the name
+
+## Quick Reference
+
+| Command | Description |
+|---------|-------------|
+| `file filename` | Identify file type |
+| `file ./*` | Check all files in directory |
+| `cat ./filename` | Read file starting with special char |
+| `strings filename` | Extract readable text |
+| `grep pattern` | Filter text by pattern |
+
+## Understanding File Types
+
+### ASCII Text
+- Human-readable characters
+- Plain text you can read
+- What you're looking for!
+
+### Data/Binary
+- Non-human-readable
+- Could be compressed, encrypted, or binary
+- Not what you want
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Linux file Command](https://man7.org/linux/man-pages/man1/file.1.html)
+- [Handling Special Filenames](https://dwheeler.com/essays/filenames-in-shell.html)
+
+---
+
+**Next Challenge:** Level 5 → Level 6 (Finding files by properties)
+
+Good luck! 🔎
