@@ -1,0 +1,110 @@
+# OverTheWire Bandit: Level 2 → Level 3
+
+## Objective
+Find the password for Level 3, which is stored in a file called **spaces in this filename** in the home directory.
+
+## Challenge Details
+- **Current Level:** bandit2
+- **Target Level:** bandit3
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **File Location:** ~/spaces in this filename
+
+## The Problem
+The filename contains spaces, which are special characters in the shell. Without proper handling, the shell interprets each word as a separate argument.
+
+## Solutions
+
+### Method 1: Double Quotes (Recommended)
+```bash
+cat "spaces in this filename"
+```
+
+### Method 2: Backslash Escaping
+```bash
+cat spaces\ in\ this\ filename
+```
+
+### Method 3: Single Quotes
+```bash
+cat 'spaces in this filename'
+```
+
+### Method 4: Tab Completion
+Type `cat spa` and press **Tab** - the shell auto-completes and escapes the filename.
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit2@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 1.
+
+2. **Verify you're in the home directory:**
+   ```bash
+   pwd
+   ```
+   Should output: `/home/bandit2`
+
+3. **List files:**
+   ```bash
+   ls
+   ```
+   Output: `spaces in this filename`
+
+4. **Read the file:**
+   ```bash
+   cat "spaces in this filename"
+   ```
+
+5. **Copy the password displayed**
+
+6. **Exit and connect to Level 3:**
+   ```bash
+   exit
+   ssh bandit3@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### Why Spaces Are Problematic
+In Unix/Linux shells, spaces separate command arguments. Without quotes or escaping:
+```bash
+cat spaces in this filename
+```
+The shell interprets this as:
+- Command: `cat`
+- Arguments: `spaces`, `in`, `this`, `filename` (four separate files)
+
+### Quote Types
+- **Double quotes (`"`)**: Preserves spaces, allows variable expansion
+- **Single quotes (`'`)**: Preserves everything literally, no expansion
+- **Backslash (`\`)**: Escapes the next character
+
+## Common Mistakes
+- ❌ `cat spaces in this filename` - treats each word as separate file
+- ❌ Typing the filename incorrectly
+- ❌ Forgetting the capitalization (Linux is case-sensitive)
+
+## Learning Outcomes
+- Handling filenames with spaces
+- Understanding shell argument parsing
+- Using quotes and escape characters
+- Tab completion for efficiency
+
+## Tips for Future Levels
+- Always use `ls` to check filenames first
+- Tab completion is your friend
+- When in doubt, use quotes around filenames
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Bash Manual - Quoting](https://www.gnu.org/software/bash/manual/html_node/Quoting.html)
+
+---
+
+**Next Challenge:** Level 3 → Level 4 (Hidden files)
+
+Good luck! 🎯
