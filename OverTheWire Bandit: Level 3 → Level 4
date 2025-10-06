@@ -1,0 +1,159 @@
+# OverTheWire Bandit: Level 3 → Level 4
+
+## Objective
+Find the password for Level 4, which is stored in a hidden file in the **inhere** directory.
+
+## Challenge Details
+- **Current Level:** bandit3
+- **Target Level:** bandit4
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **File Location:** ~/inhere/...hidden
+
+## The Problem
+The file is hidden, meaning it starts with a dot (`.`). By default, `ls` doesn't show hidden files, so you need to use special options to reveal them.
+
+## Solutions
+
+### Method 1: List All Files Including Hidden
+```bash
+cd inhere
+ls -a
+```
+
+### Method 2: List with Long Format
+```bash
+cd inhere
+ls -la
+```
+Shows hidden files with detailed information (permissions, size, etc.)
+
+### Method 3: Wildcard Pattern
+```bash
+cd inhere
+cat .*
+```
+Reads all hidden files (works if there's only one)
+
+### Method 4: Direct Access (if you know the name)
+```bash
+cat inhere/.hidden
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit3@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 2.
+
+2. **List directories in home:**
+   ```bash
+   ls
+   ```
+   Output: `inhere`
+
+3. **Enter the inhere directory:**
+   ```bash
+   cd inhere
+   ```
+
+4. **Try listing files normally:**
+   ```bash
+   ls
+   ```
+   Output: (empty - no files shown!)
+
+5. **List all files including hidden ones:**
+   ```bash
+   ls -a
+   ```
+   Output: `.  ..  .hidden`
+
+6. **Read the hidden file:**
+   ```bash
+   cat .hidden
+   ```
+
+7. **Copy the password displayed**
+
+8. **Exit and connect to Level 4:**
+   ```bash
+   exit
+   ssh bandit4@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### Hidden Files in Linux
+- Files starting with `.` are hidden by default
+- Common examples: `.bashrc`, `.profile`, `.gitignore`
+- Used for configuration files and system files
+
+### Important ls Options
+- `ls -a` : Show **a**ll files (including hidden)
+- `ls -l` : **L**ong format (detailed info)
+- `ls -la` : Combination of both
+- `ls -A` : All files except `.` and `..`
+
+### Special Directory Entries
+- `.` : Current directory
+- `..` : Parent directory
+
+## Common Mistakes
+- ❌ Using just `ls` and thinking there are no files
+- ❌ Forgetting the dot when accessing the file
+- ❌ Not changing to the inhere directory first
+- ❌ Confusing `.` (current dir) with a hidden file
+
+## Alternative Approaches
+
+### Using find Command
+```bash
+find inhere -type f
+```
+Lists all files (including hidden) in the directory.
+
+### Using Tab Completion
+```bash
+cd inhere
+cat .<TAB><TAB>
+```
+Shows all files starting with `.`
+
+## Learning Outcomes
+- Understanding hidden files in Linux
+- Using `ls` with options
+- Navigating directories with `cd`
+- File naming conventions in Unix/Linux
+
+## Tips for Future Levels
+- Always try `ls -a` when a directory seems empty
+- Hidden files are a common place to store sensitive data
+- Get comfortable with directory navigation
+- Learn to combine multiple `ls` options
+
+## Quick Reference
+
+| Command | Description |
+|---------|-------------|
+| `ls` | List visible files |
+| `ls -a` | List all files (including hidden) |
+| `ls -l` | Long format listing |
+| `ls -la` | All files in long format |
+| `cd dirname` | Change to directory |
+| `cat filename` | Display file contents |
+| `pwd` | Print working directory |
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Linux ls Command](https://man7.org/linux/man-pages/man1/ls.1.html)
+- [Hidden Files Explained](https://www.cyberciti.biz/faq/linux-show-hidden-files-command/)
+
+---
+
+**Next Challenge:** Level 4 → Level 5 (Finding human-readable files)
+
+Good luck! 🔍
