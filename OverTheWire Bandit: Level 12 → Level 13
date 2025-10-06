@@ -1,0 +1,225 @@
+# OverTheWire Bandit: Level 12 → Level 13
+
+## Objective
+Find the password for **bandit13** stored in `data.txt`, which is a hexdump of a file that has been repeatedly compressed. You need to reverse the hexdump and decompress it multiple times.
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit12
+- **Password:** [Use password from Level 11]
+
+```bash
+ssh bandit12@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Create a Working Directory
+You need write permissions, so create a temporary directory:
+```bash
+mkdir /tmp/mywork
+cd /tmp/mywork
+cp ~/data.txt .
+```
+
+### Step 2: Reverse the Hexdump
+Convert the hexdump back to binary:
+```bash
+xxd -r data.txt > data.bin
+```
+
+### Step 3: Identify the File Type
+```bash
+file data.bin
+```
+
+### Step 4: Decompress Repeatedly
+Based on the file type, decompress accordingly. You'll need to repeat this process multiple times:
+
+#### For gzip (.gz):
+```bash
+mv data.bin data.gz
+gzip -d data.gz
+```
+
+#### For bzip2 (.bz2):
+```bash
+mv data data.bz2
+bzip2 -d data.bz2
+```
+
+#### For tar archives (.tar):
+```bash
+mv data data.tar
+tar -xf data.tar
+```
+
+### Step 5: Complete Walkthrough
+Here's a typical sequence (your exact steps may vary slightly):
+
+```bash
+# Create working directory
+mkdir /tmp/mywork12
+cd /tmp/mywork12
+cp ~/data.txt .
+
+# Reverse hexdump
+xxd -r data.txt data.bin
+
+# Check file type
+file data.bin
+# Output: gzip compressed data
+
+# Decompress gzip
+mv data.bin data.gz
+gzip -d data.gz
+
+# Check again
+file data
+# Output: bzip2 compressed data
+
+# Decompress bzip2
+mv data data.bz2
+bzip2 -d data.bz2
+
+# Check again
+file data
+# Output: gzip compressed data
+
+# Decompress gzip again
+mv data data.gz
+gzip -d data.gz
+
+# Check again
+file data
+# Output: POSIX tar archive
+
+# Extract tar
+mv data data.tar
+tar -xf data.tar
+
+# Check the extracted file
+file data5.bin
+# Continue this pattern...
+
+# Repeat checking and decompressing until you find ASCII text
+# The final file will contain the password
+```
+
+### Pro Tip: Automation Script
+You can create a loop to automate this:
+
+```bash
+#!/bin/bash
+file=$(ls data*)
+while true; do
+    type=$(file -b "$file" | cut -d' ' -f1)
+    echo "File type: $(file -b "$file")"
+    
+    if [[ $(file -b "$file") == *"ASCII text"* ]]; then
+        echo "Found text file!"
+        cat "$file"
+        break
+    elif [[ $(file -b "$file") == *"gzip"* ]]; then
+        mv "$file" temp.gz
+        gzip -d temp.gz
+        file="temp"
+    elif [[ $(file -b "$file") == *"bzip2"* ]]; then
+        mv "$file" temp.bz2
+        bzip2 -d temp.bz2
+        file="temp"
+    elif [[ $(file -b "$file") == *"tar"* ]]; then
+        tar -xf "$file"
+        file=$(ls | grep -v "\.txt$" | grep -v "temp" | head -1)
+    fi
+done
+```
+
+## Commands Used
+- `xxd -r` - Reverse hexdump (convert hex to binary)
+- `file` - Determine file type
+- `gzip -d` - Decompress gzip files
+- `bzip2 -d` - Decompress bzip2 files
+- `tar -xf` - Extract tar archives
+- `mkdir` - Create directory
+- `cp` - Copy files
+- `mv` - Move/rename files
+
+## Key Concepts
+- **Hexdump**: Text representation of binary data
+- **Compression**: Multiple compression formats (gzip, bzip2)
+- **Archives**: Tar archives that bundle files
+- **File Type Detection**: Using `file` command
+- **Iterative Process**: Repeatedly checking and decompressing
+
+## Understanding File Types
+
+### Hexdump
+A hexadecimal representation of binary data. The `xxd` command can create and reverse hexdumps.
+
+### Gzip (.gz)
+Popular compression format. Uses DEFLATE algorithm.
+
+### Bzip2 (.bz2)
+Compression using Burrows-Wheeler algorithm. Better compression than gzip but slower.
+
+### Tar (.tar)
+Archive format that bundles multiple files. Often combined with compression (tar.gz, tar.bz2).
+
+## Common Issues
+
+### Permission Denied
+Use `/tmp` directory for write access.
+
+### Wrong File Extension
+Always use `file` command first, then rename appropriately.
+
+### Lost Track?
+Start over in a new directory:
+```bash
+rm -rf /tmp/mywork12
+mkdir /tmp/mywork12
+cd /tmp/mywork12
+```
+
+## Next Level
+Once you have the password, proceed to Level 13:
+```bash
+ssh bandit13@bandit.labs.overthewire.org -p 2220
+```
+
+## Notes
+- This level requires patience and attention to detail
+- Use `file` command after each decompression
+- The file has been compressed multiple times with different algorithms
+- You'll typically go through 8-10 decompressions
+- Keep track of what you're doing or use the script
+
+## Quick Reference
+
+```bash
+# Check file type
+file filename
+
+# Hexdump reverse
+xxd -r hexfile binfile
+
+# Decompress gzip
+gzip -d file.gz
+
+# Decompress bzip2
+bzip2 -d file.bz2
+
+# Extract tar
+tar -xf file.tar
+```
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [xxd manual](https://linux.die.net/man/1/xxd)
+- [gzip manual](https://man7.org/linux/man-pages/man1/gzip.1.html)
+- [bzip2 manual](https://linux.die.net/man/1/bzip2)
+- [tar manual](https://man7.org/linux/man-pages/man1/tar.1.html)
