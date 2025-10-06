@@ -1,0 +1,31 @@
+OverTheWire Bandit: Level 7 → Level 8
+Let me help you solve this level!
+Challenge
+The password for bandit8 is stored in the file data.txt next to the word "millionth".
+Solution
+First, connect to bandit7:
+bashssh bandit7@bandit.labs.overthewire.org -p 2220
+Once logged in, you need to find the password in data.txt. The file likely contains many lines, but you're looking for the one with "millionth".
+Method 1: Using grep
+The most efficient approach is to use grep to search for the specific word:
+bashgrep "millionth" data.txt
+This will output the line containing "millionth" along with the password next to it.
+Method 2: Using cat and grep
+Alternatively:
+bashcat data.txt | grep "millionth"
+Method 3: Manual search with less
+If you want to browse the file:
+bashless data.txt
+Then press / to search, type millionth, and press Enter.
+Expected Output
+You should see something like:
+millionth       [PASSWORD_HERE]
+Key Learning
+
+grep: A powerful tool for searching text patterns in files
+Syntax: grep "pattern" filename
+This is much more efficient than manually searching through large files
+
+Once you have the password, use it to connect to bandit8:
+bashssh bandit8@bandit.labs.overthewire.org -p 2220
+Good luck! 🚀RetryClaude does not have the ability to run the code it generates yet.
