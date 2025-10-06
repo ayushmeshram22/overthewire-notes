@@ -1,0 +1,204 @@
+# OverTheWire Bandit: Level 5 → Level 6
+
+## Objective
+Find the password for Level 6, which is stored somewhere in the **inhere** directory with the following properties:
+- Human-readable
+- 1033 bytes in size
+- Not executable
+
+## Challenge Details
+- **Current Level:** bandit5
+- **Target Level:** bandit6
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **File Location:** ~/inhere/maybehere??/...
+- **File Properties:** 1033 bytes, human-readable, not executable
+
+## The Problem
+The inhere directory contains many subdirectories, each with multiple files. You need to search through this structure to find the ONE file matching all three criteria.
+
+## Solutions
+
+### Method 1: Using `find` Command (Recommended)
+```bash
+find inhere -type f -size 1033c -readable ! -executable
+```
+
+### Method 2: With Human-Readable Check
+```bash
+find inhere -type f -size 1033c ! -executable -exec file {} \; | grep "ASCII"
+```
+
+### Method 3: Alternative find Syntax
+```bash
+find inhere -type f -size 1033c ! -perm /111
+```
+`! -perm /111` means not executable by anyone.
+
+### Method 4: Step-by-Step Approach
+```bash
+# Find by size first
+find inhere -type f -size 1033c
+# Then check if executable and readable
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit5@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 4.
+
+2. **Navigate to home directory (if not already there):**
+   ```bash
+   cd ~
+   ```
+
+3. **Explore the inhere directory structure:**
+   ```bash
+   ls inhere
+   ```
+   Output: Multiple `maybehere` directories
+
+4. **Use find to locate the file:**
+   ```bash
+   find inhere -type f -size 1033c -readable ! -executable
+   ```
+   Output: `inhere/maybehere07/.file2` (or similar path)
+
+5. **Read the file:**
+   ```bash
+   cat inhere/maybehere07/.file2
+   ```
+   Note: The file might have trailing spaces, but the password is there.
+
+6. **Copy the password (trim any whitespace)**
+
+7. **Exit and connect to Level 6:**
+   ```bash
+   exit
+   ssh bandit6@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### The `find` Command
+Powerful tool for searching files based on various criteria.
+
+### Find Options Used
+
+| Option | Description |
+|--------|-------------|
+| `-type f` | Only files (not directories) |
+| `-size 1033c` | Exactly 1033 bytes (c = bytes) |
+| `-readable` | File is readable |
+| `! -executable` | NOT executable (! means NOT) |
+| `-perm` | Permission-based search |
+
+### Size Suffixes
+- `c` - bytes
+- `k` - kilobytes
+- `M` - megabytes
+- `G` - gigabytes
+
+Examples:
+- `-size 1033c` - exactly 1033 bytes
+- `-size +100k` - larger than 100 KB
+- `-size -5M` - smaller than 5 MB
+
+## Common Mistakes
+- ❌ Manually searching each directory (too time-consuming)
+- ❌ Forgetting the `c` suffix (1033c for bytes)
+- ❌ Using `-size 1033` without unit (defaults to 512-byte blocks)
+- ❌ Not handling hidden files (files starting with `.`)
+- ❌ Missing the `!` for "not executable"
+
+## Understanding Permissions
+
+### Executable Check
+- `-executable` - File can be executed
+- `! -executable` - File cannot be executed
+- `-perm /111` - Any execute bit set (user, group, or other)
+- `! -perm /111` - No execute bits set
+
+## Alternative Approaches
+
+### Method 1: Combining with file Command
+```bash
+find inhere -type f -size 1033c ! -executable -exec file {} \; | grep "text"
+```
+
+### Method 2: Using ls with find
+```bash
+find inhere -type f -size 1033c -ls
+```
+Shows detailed file information.
+
+### Method 3: Direct read with find
+```bash
+find inhere -type f -size 1033c ! -executable -exec cat {} \;
+```
+
+## Handling Output
+
+### If File Has Trailing Spaces
+The password might have trailing spaces or newlines. Copy just the actual password text.
+
+### Multiple Matches
+If you get multiple results, check each one:
+```bash
+find inhere -type f -size 1033c ! -executable -exec cat {} \;
+```
+
+## Learning Outcomes
+- Advanced usage of `find` command
+- Searching by file size
+- Understanding file permissions and executability
+- Combining multiple search criteria
+- Efficient file system navigation
+
+## Tips for Future Levels
+- Master the `find` command - it's incredibly powerful
+- Learn to combine multiple search criteria
+- Understand file permissions (read, write, execute)
+- Use `-exec` to perform actions on found files
+- Remember size suffixes (c, k, M, G)
+
+## Quick Reference
+
+### Find Syntax
+```bash
+find [path] [options] [tests] [actions]
+```
+
+### Useful Find Options
+```bash
+-name pattern        # Find by filename
+-type f/d           # f=file, d=directory
+-size [+/-]n[cwkMG] # Size criteria
+-user username      # Owner
+-group groupname    # Group owner
+-perm mode          # Permissions
+-readable           # Readable by current user
+-writable           # Writable by current user
+-executable         # Executable by current user
+-exec command {} \; # Execute command on results
+```
+
+### Logical Operators
+- `-and` or `-a` - Both conditions true (default)
+- `-or` or `-o` - Either condition true
+- `!` or `-not` - Negation (NOT)
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Linux find Command](https://man7.org/linux/man-pages/man1/find.1.html)
+- [Find Command Examples](https://www.tecmint.com/35-practical-examples-of-linux-find-command/)
+
+---
+
+**Next Challenge:** Level 6 → Level 7 (Finding files system-wide)
+
+Good luck! 🎯
