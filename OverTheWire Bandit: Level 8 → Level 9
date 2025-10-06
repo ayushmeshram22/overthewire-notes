@@ -1,0 +1,88 @@
+# OverTheWire Bandit: Level 8 → Level 9
+
+## Objective
+Find the password for **bandit9** stored in the file `data.txt`. The password is the only line of text that occurs **only once**.
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit8
+- **Password:** [Use password from Level 7]
+
+```bash
+ssh bandit8@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Examine the File
+Check what we're working with:
+```bash
+ls -la
+wc -l data.txt  # Count the number of lines
+```
+
+The file contains many duplicate lines, but only one unique line.
+
+### Step 2: Find the Unique Line
+Use `sort` and `uniq` to find the line that appears only once:
+
+```bash
+sort data.txt | uniq -u
+```
+
+**Explanation:**
+- `sort` - Sorts all lines alphabetically (required for `uniq` to work properly)
+- `|` - Pipes the sorted output to the next command
+- `uniq -u` - Displays only unique lines (lines that appear exactly once)
+
+### Alternative Method: Count Occurrences
+To see how many times each line appears:
+```bash
+sort data.txt | uniq -c | sort -n
+```
+
+This shows counts, and you can identify the line with count "1".
+
+### Step 3: Verify
+The output should be a single line containing the password for bandit9.
+
+## Commands Used
+- `sort` - Sort lines of text
+- `uniq -u` - Report or filter out repeated lines (only unique)
+- `uniq -c` - Prefix lines with occurrence count
+- `wc -l` - Count lines in a file
+
+## Key Concepts
+- **Sorting**: Required before using `uniq` to group identical lines
+- **Pipes**: Chaining commands together for powerful text processing
+- **uniq utility**: Filtering duplicate lines in sorted data
+- The `-u` flag shows only lines that appear once
+
+## Why Sort First?
+`uniq` only removes **adjacent** duplicate lines. Without sorting first, duplicates spread throughout the file won't be detected.
+
+**Example:**
+```
+apple
+banana
+apple    # Won't be detected as duplicate without sort
+```
+
+## Next Level
+Once you have the password, proceed to Level 9:
+```bash
+ssh bandit9@bandit.labs.overthewire.org -p 2220
+```
+
+## Notes
+- The file contains mostly duplicate lines
+- Only ONE line appears exactly once - that's your password
+- Always sort before using `uniq`
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [sort manual](https://man7.org/linux/man-pages/man1/sort.1.html)
+- [uniq manual](https://man7.org/linux/man-pages/man1/uniq.1.html)
