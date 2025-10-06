@@ -1,0 +1,230 @@
+#
+
+## Objective
+The password for **bandit16** can be retrieved by submitting the password of the current level to **port 30001 on localhost** using **SSL encryption**.
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit15
+- **Password:** [Use password from Level 14]
+
+```bash
+ssh bandit15@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Get the Current Password
+```bash
+cat /etc/bandit_pass/bandit15
+```
+
+### Step 2: Connect Using SSL/TLS
+
+#### Method 1: Using `openssl s_client` (Recommended)
+```bash
+openssl s_client -connect localhost:30001
+```
+
+After the SSL handshake completes, paste the bandit15 password and press Enter.
+
+#### Method 2: One-liner with echo
+```bash
+echo "PASSWORD_HERE" | openssl s_client -connect localhost:30001 -quiet
+```
+
+#### Method 3: Using cat to pipe password
+```bash
+cat /etc/bandit_pass/bandit15 | openssl s_client -connect localhost:30001 -quiet
+```
+
+#### Method 4: Using ncat with SSL
+```bash
+ncat --ssl localhost 30001
+```
+Then paste the password.
+
+Or:
+```bash
+cat /etc/bandit_pass/bandit15 | ncat --ssl localhost 30001
+```
+
+**Output:**
+After submitting the correct password, you'll receive the password for bandit16!
+
+## Commands Used
+- `openssl s_client` - OpenSSL command line SSL/TLS client
+- `ncat --ssl` - Netcat with SSL support
+- `cat` - Display file contents
+- `echo` - Display text
+
+## Key Concepts
+- **SSL/TLS**: Secure Sockets Layer / Transport Layer Security
+- **Encryption**: Protecting data in transit
+- **Certificates**: Digital documents for authentication
+- **Handshake**: Initial negotiation between client and server
+- **Encrypted Communication**: Data is scrambled during transmission
+
+## Understanding SSL/TLS
+
+### What is SSL/TLS?
+SSL (Secure Sockets Layer) and its successor TLS (Transport Layer Security) are cryptographic protocols that provide secure communication over networks.
+
+### Why Use SSL/TLS?
+- **Confidentiality**: Data is encrypted, can't be read by eavesdroppers
+- **Integrity**: Data can't be tampered with during transmission
+- **Authentication**: Verify you're connecting to the legitimate server
+
+### SSL/TLS Handshake Process
+1. **Client Hello**: Client sends supported cipher suites
+2. **Server Hello**: Server chooses cipher suite and sends certificate
+3. **Key Exchange**: Both parties agree on encryption keys
+4. **Encrypted Communication**: Data is now secure
+
+### Common Uses
+- **HTTPS**: Secure web browsing (HTTP over SSL/TLS)
+- **SMTPS**: Secure email
+- **FTPS**: Secure file transfer
+- **SSH**: Secure shell (uses similar concepts)
+
+## OpenSSL Command Options
+
+```bash
+# Basic connection
+openssl s_client -connect host:port
+
+# Quiet mode (less verbose output)
+openssl s_client -connect host:port -quiet
+
+# Show certificates
+openssl s_client -connect host:port -showcerts
+
+# Specify TLS version
+openssl s_client -connect host:port -tls1_2
+
+# Don't verify certificate
+openssl s_client -connect host:port -no_verify
+
+# Connect and send data immediately
+echo "data" | openssl s_client -connect host:port -quiet
+```
+
+## Understanding the Output
+
+When you connect with `openssl s_client`, you'll see:
+```
+CONNECTED(00000003)
+depth=0 CN = ...
+verify error:num=...
+---
+Certificate chain
+ 0 s:CN = ...
+---
+Server certificate
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+---
+SSL handshake has read ... bytes
+...
+```
+
+After all this output, you can type/paste the password.
+
+### Using `-quiet` Flag
+The `-quiet` flag suppresses most of this output, showing only:
+- Connection status
+- Your input
+- Server response
+
+## Difference from Level 14→15
+
+| Level 14→15 | Level 15→16 |
+|-------------|-------------|
+| Plain TCP | SSL/TLS encrypted |
+| `nc localhost 30000` | `openssl s_client -connect localhost:30001` |
+| Port 30000 | Port 30001 |
+| No encryption | Encrypted communication |
+
+## Troubleshooting
+
+### Certificate Verification Errors
+You might see:
+```
+verify error:num=18:self signed certificate
+verify error:num=19:self signed certificate in certificate chain
+```
+This is normal for this challenge - the server uses a self-signed certificate.
+
+### Connection Hangs
+- Wait for SSL handshake to complete (few seconds)
+- Look for "read R BLOCK" or similar message
+- Then paste password and press Enter
+
+### No Response
+- Make sure to press Enter after password
+- Try adding `-quiet` flag
+- Use `-ign_eof` to prevent immediate disconnect
+
+## Alternative: Using ncat
+
+Ncat (modern netcat) supports SSL:
+```bash
+# Install if not available (usually is)
+ncat --ssl localhost 30001
+
+# With password piped
+cat /etc/bandit_pass/bandit15 | ncat --ssl localhost 30001
+```
+
+## Real-World SSL/TLS Tools
+
+### Check SSL Certificate of Website
+```bash
+openssl s_client -connect google.com:443
+```
+
+### Extract Certificate
+```bash
+openssl s_client -connect google.com:443 -showcerts
+```
+
+### Test SSL/TLS Versions
+```bash
+openssl s_client -connect host:443 -tls1_2
+openssl s_client -connect host:443 -tls1_3
+```
+
+### View Certificate Details
+```bash
+echo | openssl s_client -connect google.com:443 2>/dev/null | openssl x509 -noout -text
+```
+
+## Next Level
+Once you have the password, proceed to Level 16:
+```bash
+ssh bandit16@bandit.labs.overthewire.org -p 2220
+```
+
+## Notes
+- SSL/TLS adds encryption layer to network communication
+- `openssl s_client` is the command-line SSL/TLS client
+- Port 30001 (different from previous level's 30000)
+- Self-signed certificates will show verification errors (normal here)
+- The `-quiet` flag reduces verbose output
+- HTTPS is HTTP over SSL/TLS (port 443)
+
+## Security Implications
+- Always use SSL/TLS for sensitive data transmission
+- Plain text protocols (HTTP, FTP, Telnet) can be intercepted
+- Modern web requires HTTPS (browsers warn about HTTP)
+- Certificate verification prevents man-in-the-middle attacks
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [openssl manual](https://www.openssl.org/docs/man1.1.1/man1/openssl-s_client.html)
+- [SSL/TLS Explained](https://www.cloudflare.com/learning/ssl/what-is-ssl/)
+- [How HTTPS Works](https://howhttps.works/)
