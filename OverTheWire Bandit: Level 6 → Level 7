@@ -1,0 +1,208 @@
+# OverTheWire Bandit: Level 6 → Level 7
+
+## Objective
+Find the password for Level 7, which is stored **somewhere on the server** with the following properties:
+- Owned by user **bandit7**
+- Owned by group **bandit6**
+- 33 bytes in size
+
+## Challenge Details
+- **Current Level:** bandit6
+- **Target Level:** bandit7
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **File Location:** Somewhere on the entire server
+- **File Properties:** 33 bytes, user=bandit7, group=bandit6
+
+## The Problem
+Unlike previous levels, the file is NOT in your home directory. It could be anywhere on the entire server. You need to search the entire filesystem while handling permission errors.
+
+## Solutions
+
+### Method 1: Search from Root with Error Suppression (Recommended)
+```bash
+find / -type f -user bandit7 -group bandit6 -size 33c 2>/dev/null
+```
+
+### Method 2: Redirect Errors to See Only Results
+```bash
+find / -user bandit7 -group bandit6 -size 33c -type f 2>&1 | grep -v "Permission denied"
+```
+
+### Method 3: Using Logical Grouping
+```bash
+find / -type f -size 33c -user bandit7 -group bandit6 2>/dev/null
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit6@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 5.
+
+2. **Search the entire filesystem:**
+   ```bash
+   find / -type f -user bandit7 -group bandit6 -size 33c 2>/dev/null
+   ```
+   
+   This searches from root (`/`) for files matching all criteria.
+   The `2>/dev/null` suppresses "Permission denied" errors.
+
+3. **Expected output:**
+   ```
+   /var/lib/dpkg/info/bandit7.password
+   ```
+
+4. **Read the file:**
+   ```bash
+   cat /var/lib/dpkg/info/bandit7.password
+   ```
+
+5. **Copy the password displayed**
+
+6. **Exit and connect to Level 7:**
+   ```bash
+   exit
+   ssh bandit7@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### Searching from Root (`/`)
+- `/` is the root of the entire filesystem
+- Searching from `/` covers the entire server
+- You'll encounter many "Permission denied" errors (this is normal!)
+
+### Error Redirection (`2>/dev/null`)
+Understanding standard streams:
+- `0` = stdin (standard input)
+- `1` = stdout (standard output) 
+- `2` = stderr (standard error)
+
+`2>/dev/null` redirects error messages to `/dev/null` (discards them).
+
+### File Ownership in Linux
+Every file has:
+- **User owner** (who created/owns it)
+- **Group owner** (group that owns it)
+- **Permissions** (read, write, execute for user/group/others)
+
+### Find Options for Ownership
+
+| Option | Description |
+|--------|-------------|
+| `-user username` | Files owned by specific user |
+| `-group groupname` | Files owned by specific group |
+| `-uid n` | Files owned by user ID n |
+| `-gid n` | Files owned by group ID n |
+
+## Common Mistakes
+- ❌ Searching only in home directory (`~/` or `.`)
+- ❌ Not suppressing error output (cluttered results)
+- ❌ Giving up after seeing "Permission denied" errors
+- ❌ Forgetting the `c` suffix for bytes in size
+- ❌ Wrong order of arguments (though order usually doesn't matter)
+
+## Understanding Error Handling
+
+### Why So Many Errors?
+As a regular user (bandit6), you don't have permission to read many system directories. This generates lots of "Permission denied" errors.
+
+### Methods to Handle Errors
+
+**Method 1: Discard Errors**
+```bash
+find / -user bandit7 -group bandit6 -size 33c 2>/dev/null
+```
+Cleanest output - only shows matches.
+
+**Method 2: Filter Errors**
+```bash
+find / -user bandit7 -group bandit6 -size 33c 2>&1 | grep -v "Permission denied"
+```
+Keeps other errors visible if debugging.
+
+**Method 3: See Everything**
+```bash
+find / -user bandit7 -group bandit6 -size 33c
+```
+Shows all errors (messy but sometimes useful).
+
+## Alternative Approaches
+
+### Method 1: Search Specific Directories
+If you want to avoid system directories:
+```bash
+find /home /var -user bandit7 -group bandit6 -size 33c 2>/dev/null
+```
+
+### Method 2: Using locate (if available)
+```bash
+locate -u  # Update database (may not have permissions)
+locate bandit7
+```
+
+### Method 3: Check Ownership and Size Separately
+```bash
+# First find by owner
+find / -user bandit7 -group bandit6 2>/dev/null
+
+# Then check sizes
+find / -user bandit7 -group bandit6 -ls 2>/dev/null
+```
+
+## Learning Outcomes
+- Searching the entire filesystem
+- Understanding file ownership (user and group)
+- Handling permission errors gracefully
+- Error stream redirection (`2>`)
+- Combining multiple search criteria effectively
+- Understanding Linux filesystem hierarchy
+
+## Tips for Future Levels
+- `/` searches everything - be prepared for errors
+- Always use `2>/dev/null` for system-wide searches
+- Understand user and group ownership concepts
+- Learn the Linux filesystem structure (`/var`, `/home`, `/etc`, etc.)
+- `find` is one of the most powerful commands - master it!
+
+## Quick Reference
+
+### Find by Ownership
+```bash
+find / -user username              # By user
+find / -group groupname            # By group
+find / -user user -group group     # Both user AND group
+```
+
+### Error Redirection
+```bash
+command 2>/dev/null               # Discard errors
+command 2>&1                      # Merge stderr to stdout
+command 2>&1 | grep -v "pattern"  # Filter out specific errors
+command > output.txt 2>&1         # Redirect both to file
+```
+
+### Linux Filesystem Hierarchy
+- `/` - Root directory
+- `/home` - User home directories
+- `/var` - Variable data (logs, caches)
+- `/etc` - Configuration files
+- `/tmp` - Temporary files
+- `/usr` - User programs and data
+- `/bin` - Essential binaries
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Linux find Command](https://man7.org/linux/man-pages/man1/find.1.html)
+- [Linux File Permissions](https://www.guru99.com/file-permissions.html)
+- [I/O Redirection](https://www.gnu.org/software/bash/manual/html_node/Redirections.html)
+
+---
+
+**Next Challenge:** Level 7 → Level 8 (Searching within files)
+
+Good luck! 🔍
