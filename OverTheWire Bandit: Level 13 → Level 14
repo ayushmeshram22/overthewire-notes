@@ -1,0 +1,173 @@
+# OverTheWire Bandit: Level 13 → Level 14
+
+## Objective
+The password for **bandit14** is stored in `/etc/bandit_pass/bandit14` and can only be read by user bandit14. For this level, you don't get the next password, but you get a private SSH key that can be used to log into bandit14.
+
+## Connection Details
+- **Host:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Username:** bandit13
+- **Password:** [Use password from Level 12]
+
+```bash
+ssh bandit13@bandit.labs.overthewire.org -p 2220
+```
+
+## Solution
+
+### Step 1: Locate the SSH Key
+Check what's in the home directory:
+```bash
+ls -la
+cat sshkey.private
+```
+
+You'll see a private SSH key (starts with `-----BEGIN RSA PRIVATE KEY-----`).
+
+### Step 2: Use the SSH Key to Login as bandit14
+
+#### Method 1: Direct SSH from Your Machine
+Copy the private key to your local machine:
+```bash
+# On bandit13, display the key
+cat sshkey.private
+
+# Copy the output, then on your local machine:
+nano bandit14.key
+# Paste the key, save and exit
+
+# Set proper permissions
+chmod 600 bandit14.key
+
+# SSH using the key
+ssh -i bandit14.key bandit14@bandit.labs.overthewire.org -p 2220
+```
+
+#### Method 2: SSH from bandit13 to localhost
+Use the key directly from bandit13:
+```bash
+ssh -i sshkey.private bandit14@localhost -p 2220
+```
+
+Or:
+```bash
+ssh -i sshkey.private bandit14@bandit.labs.overthewire.org -p 2220
+```
+
+### Step 3: Read the Password
+Once logged in as bandit14:
+```bash
+cat /etc/bandit_pass/bandit14
+```
+
+This gives you the password for bandit14!
+
+## Commands Used
+- `ssh -i` - SSH with identity file (private key)
+- `cat` - Display file contents
+- `chmod` - Change file permissions
+- `ls -la` - List files with details
+
+## Key Concepts
+- **SSH Key Authentication**: Using public/private key pairs instead of passwords
+- **Private Keys**: Must be kept secret and have restricted permissions (600)
+- **Public Key Authentication**: More secure than password authentication
+- **File Permissions**: Private keys must have proper permissions
+
+## Understanding SSH Keys
+
+### What are SSH Keys?
+SSH keys are a pair of cryptographic keys:
+- **Private Key**: Kept secret, proves your identity
+- **Public Key**: Can be shared, used to verify the private key
+
+### How SSH Key Authentication Works
+1. Server has your public key
+2. You connect with your private key
+3. Server verifies you have the matching private key
+4. Access granted without password
+
+### Key Permission Requirements
+Private keys must have restricted permissions:
+```bash
+chmod 600 keyfile  # Only owner can read/write
+```
+
+If permissions are too open, SSH will refuse to use the key:
+```
+WARNING: UNPROTECTED PRIVATE KEY FILE!
+Permissions 0644 are too open.
+```
+
+## Why Use SSH Keys?
+- **More Secure**: Longer and more complex than passwords
+- **Convenience**: No need to type passwords
+- **Automation**: Scripts can authenticate automatically
+- **Revocable**: Can disable a key without changing passwords
+
+## Common SSH Key Commands
+
+```bash
+# Generate new SSH key pair
+ssh-keygen -t rsa -b 4096
+
+# Copy public key to server
+ssh-copy-id user@host
+
+# Specify custom key location
+ssh -i /path/to/key user@host
+
+# Add key to SSH agent (avoid typing passphrase repeatedly)
+ssh-add /path/to/key
+```
+
+## Troubleshooting
+
+### "Permission denied (publickey)"
+- Check key file permissions: `chmod 600 keyfile`
+- Verify you're using the correct key
+- Ensure the key format is correct
+
+### "Could not open a connection to your authentication agent"
+Start the SSH agent:
+```bash
+eval $(ssh-agent)
+ssh-add keyfile
+```
+
+## Next Level
+You're already logged in as bandit14! Now you can:
+1. Read the password from `/etc/bandit_pass/bandit14`
+2. Proceed to Level 14→15
+
+Or reconnect normally:
+```bash
+ssh bandit14@bandit.labs.overthewire.org -p 2220
+# Use the password you retrieved
+```
+
+## Notes
+- This is the first level using SSH key authentication
+- Private keys must have 600 permissions (read/write for owner only)
+- You can SSH from bandit13 to localhost to access bandit14
+- The password file `/etc/bandit_pass/bandit14` is only readable by bandit14
+- Keep private keys secure - they're like master passwords!
+
+## File Locations
+- **Private Key**: `~/sshkey.private` (on bandit13)
+- **Password File**: `/etc/bandit_pass/bandit14` (readable only by bandit14)
+
+## Security Best Practices
+- Never share your private key
+- Use strong passphrases for private keys
+- Use separate keys for different servers
+- Rotate keys periodically
+- Remove old/unused keys from `~/.ssh/authorized_keys`
+
+---
+
+**Resources:**
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [SSH Key Authentication](https://www.ssh.com/academy/ssh/key)
+- [ssh manual](https://man7.org/linux/man-pages/man1/ssh.1.html)
+- [chmod manual](https://man7.org/linux/man-pages/man1/chmod.1.html)
