@@ -1,0 +1,257 @@
+# OverTheWire Bandit: Level 17 → Level 18
+
+## Objective
+Find the password for Level 18. There are two files in the home directory: **passwords.old** and **passwords.new**. The password for the next level is in **passwords.new** and is the only line that has been changed between the two files.
+
+## Challenge Details
+- **Current Level:** bandit17
+- **Target Level:** bandit18
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Files:** passwords.old and passwords.new
+- **Task:** Find the line that differs between the two files
+
+## The Problem
+You have two files with many lines. Only ONE line differs between them, and that different line in `passwords.new` contains the password for the next level.
+
+## Solutions
+
+### Method 1: Using `diff` (Recommended)
+```bash
+diff passwords.old passwords.new
+```
+
+### Method 2: Show Only Changed Lines
+```bash
+diff --changed-group-format='%>' --unchanged-group-format='' passwords.old passwords.new
+```
+
+### Method 3: Using comm
+```bash
+comm -3 <(sort passwords.old) <(sort passwords.new)
+```
+
+### Method 4: Side-by-Side Comparison
+```bash
+diff -y passwords.old passwords.new | grep "|"
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit17@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 16.
+
+2. **List files in home directory:**
+   ```bash
+   ls
+   ```
+   Output: `passwords.old  passwords.new`
+
+3. **Check file sizes (optional):**
+   ```bash
+   wc -l passwords.*
+   ```
+   Both files should have the same number of lines.
+
+4. **Compare the files:**
+   ```bash
+   diff passwords.old passwords.new
+   ```
+   
+   Output format:
+   ```
+   42c42
+   < [old_password]
+   ---
+   > [new_password]
+   ```
+
+5. **The line after `>` is the new password**
+   The `>` indicates the line from `passwords.new` (the newer file).
+
+6. **Copy the password from the `>` line**
+
+7. **Exit and connect to Level 18:**
+   ```bash
+   exit
+   ssh bandit18@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### The `diff` Command
+`diff` compares files line by line and shows the differences.
+
+Basic syntax:
+```bash
+diff [options] file1 file2
+```
+
+### Understanding diff Output
+
+**Standard Format:**
+```
+42c42
+< line from file1
+---
+> line from file2
+```
+
+- `42c42` = line 42 changed (c = change)
+- `<` = line from first file (passwords.old)
+- `>` = line from second file (passwords.new)
+- `---` = separator
+
+**Other change types:**
+- `a` = added
+- `d` = deleted
+- `c` = changed
+
+### Useful diff Options
+
+| Option | Description |
+|--------|-------------|
+| `-u` | Unified format (more readable) |
+| `-y` | Side-by-side comparison |
+| `-q` | Brief output (only if files differ) |
+| `-i` | Ignore case differences |
+| `-w` | Ignore whitespace |
+| `-c` | Context format |
+| `--color` | Colored output (if supported) |
+
+## Common Mistakes
+- ❌ Manually comparing files line by line
+- ❌ Confusing `<` (old) with `>` (new) symbols
+- ❌ Not understanding diff output format
+- ❌ Taking the password from `<` instead of `>`
+- ❌ Trying to use text editors for comparison
+
+## Alternative Approaches
+
+### Method 1: Unified Diff Format
+```bash
+diff -u passwords.old passwords.new
+```
+More readable output:
+```
+-old_line
++new_line
+```
+The line with `+` is from passwords.new.
+
+### Method 2: Extract Only New Line
+```bash
+diff passwords.old passwords.new | grep "^>" | cut -d' ' -f2
+```
+Directly extracts the new password.
+
+### Method 3: Using vimdiff (Visual)
+```bash
+vimdiff passwords.old passwords.new
+```
+Opens both files side-by-side in vim with highlighting.
+
+### Method 4: Count Differences
+```bash
+diff passwords.old passwords.new | wc -l
+```
+Tells you how many lines differ (should be 3 in this case).
+
+## Understanding the Files
+
+### Why Two Password Files?
+This simulates a real-world scenario:
+- **passwords.old** = previous password database
+- **passwords.new** = updated password database
+- You need to find what changed (audit trail)
+
+### Real-World Use Cases
+- Configuration file changes
+- Code version comparison
+- Backup verification
+- Security auditing
+
+## Learning Outcomes
+- Using `diff` to compare files
+- Understanding diff output format
+- Identifying changes between file versions
+- File comparison techniques
+- Reading structured diff output
+
+## Tips for Future Levels
+- `diff` is essential for comparing files
+- Learn to read diff output quickly
+- Understand the symbols: `<` (old), `>` (new)
+- Know when to use different diff formats
+- Practice with unified diff (`-u`) for better readability
+
+## Quick Reference
+
+### diff Command Formats
+```bash
+diff file1 file2              # Standard format
+diff -u file1 file2           # Unified format (with context)
+diff -y file1 file2           # Side-by-side format
+diff -q file1 file2           # Brief (only reports if different)
+diff -r dir1 dir2             # Recursive directory comparison
+```
+
+### Extracting Specific Changes
+```bash
+# Get only added lines (from file2)
+diff file1 file2 | grep "^>"
+
+# Get only removed lines (from file1)
+diff file1 file2 | grep "^<"
+
+# Get only changed section markers
+diff file1 file2 | grep "^[0-9]"
+```
+
+### Other Comparison Tools
+- `comm` - Compare sorted files line by line
+- `cmp` - Compare files byte by byte
+- `vimdiff` - Visual diff in vim
+- `sdiff` - Side-by-side merge
+- `patch` - Apply diff files
+
+## Understanding diff Output Examples
+
+### Example 1: Line Changed
+```
+42c42
+< oldpassword123
+---
+> newpassword456
+```
+Line 42 was changed. Take the line after `>`.
+
+### Example 2: Line Added
+```
+42a43
+> newline
+```
+Line 43 was added in file2.
+
+### Example 3: Line Deleted
+```
+42d41
+< oldline
+```
+Line 42 from file1 was deleted.
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Linux diff Command](https://man7.org/linux/man-pages/man1/diff.1.html)
+- [Understanding diff Output](https://www.computerhope.com/unix/udiff.htm)
+- [diff Tutorial](https://www.geeksforgeeks.org/diff-command-linux-examples/)
+
+---
+
+**Next Challenge:** Level 18 → Level 19 (.bashrc complications)
+
+Good luck! 🔍
