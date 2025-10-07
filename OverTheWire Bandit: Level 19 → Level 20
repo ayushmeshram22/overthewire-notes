@@ -1,0 +1,250 @@
+# OverTheWire Bandit: Level 19 → Level 20
+
+## Objective
+Find the password for Level 20. To gain access to the next level, you should use the **setuid binary** in the home directory. Execute it without arguments to find out how to use it.
+
+## Challenge Details
+- **Current Level:** bandit19
+- **Target Level:** bandit20
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Binary Location:** ~/bandit20-do
+- **Password Location:** /etc/bandit_pass/bandit20
+
+## The Problem
+The password for bandit20 is stored in `/etc/bandit_pass/bandit20`, but you don't have permission to read it as bandit19. However, there's a setuid binary that runs commands as bandit20, allowing you to read the password file.
+
+## Solutions
+
+### Method 1: Use the Setuid Binary (Recommended)
+```bash
+./bandit20-do cat /etc/bandit_pass/bandit20
+```
+
+### Method 2: Check Usage First
+```bash
+./bandit20-do
+./bandit20-do cat /etc/bandit_pass/bandit20
+```
+
+### Method 3: Verify with id Command
+```bash
+./bandit20-do id
+./bandit20-do cat /etc/bandit_pass/bandit20
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit19@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 18.
+
+2. **List files in home directory:**
+   ```bash
+   ls -la
+   ```
+   Output should show: `bandit20-do` (with special permissions)
+
+3. **Check the binary's permissions:**
+   ```bash
+   ls -l bandit20-do
+   ```
+   Output:
+   ```
+   -rwsr-x--- 1 bandit20 bandit19 ... bandit20-do
+   ```
+   Note the `s` in permissions (setuid bit).
+
+4. **Run the binary without arguments to see usage:**
+   ```bash
+   ./bandit20-do
+   ```
+   Output: `Run a command as another user.`
+
+5. **Use the binary to read the password:**
+   ```bash
+   ./bandit20-do cat /etc/bandit_pass/bandit20
+   ```
+
+6. **Copy the password displayed**
+
+7. **Exit and connect to Level 20:**
+   ```bash
+   exit
+   ssh bandit20@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### What is Setuid?
+**Setuid (Set User ID)** is a special permission that allows users to run an executable with the permissions of the executable's owner.
+
+### Understanding File Permissions
+
+**Normal file:**
+```
+-rwxr-xr-x  1 owner group  size date filename
+```
+
+**Setuid file:**
+```
+-rwsr-xr-x  1 owner group  size date filename
+```
+
+The `s` replaces `x` in the owner's execute permission.
+
+### How Setuid Works
+
+When you execute a setuid binary:
+1. Normally: Program runs with **your** permissions
+2. With setuid: Program runs with **owner's** permissions
+
+In this case:
+- Binary owner: `bandit20`
+- You run it as: `bandit19`
+- It executes as: `bandit20` (due to setuid)
+
+### Permission Breakdown
+
+```
+-rwsr-x---
+```
+- `-` = Regular file
+- `rws` = Owner (bandit20) can read, write, and execute with setuid
+- `r-x` = Group (bandit19) can read and execute
+- `---` = Others have no permissions
+
+## Common Mistakes
+- ❌ Trying to read `/etc/bandit_pass/bandit20` directly
+- ❌ Not using `./` before the binary name
+- ❌ Not understanding what the binary does
+- ❌ Forgetting to specify a command after `bandit20-do`
+- ❌ Not checking permissions first
+
+## Alternative Approaches
+
+### Method 1: Verify Effective User
+```bash
+./bandit20-do whoami
+```
+Output: `bandit20` (confirms you're running as bandit20)
+
+### Method 2: Test with id Command
+```bash
+./bandit20-do id
+```
+Shows you're running with bandit20's UID.
+
+### Method 3: List Password Directory
+```bash
+./bandit20-do ls -l /etc/bandit_pass/
+```
+Shows all password files and their permissions.
+
+### Method 4: Multiple Commands
+```bash
+./bandit20-do sh -c "whoami && cat /etc/bandit_pass/bandit20"
+```
+
+## Understanding Setuid Permissions
+
+### Setting Setuid (For Reference)
+```bash
+chmod u+s filename    # Add setuid
+chmod 4755 filename   # Numeric mode (4 = setuid)
+```
+
+### Finding Setuid Files
+```bash
+find / -perm -4000 -type f 2>/dev/null
+```
+Finds all setuid files on the system.
+
+### Security Implications
+- Setuid binaries are powerful and potentially dangerous
+- They're common targets for privilege escalation
+- Must be carefully audited for security
+- Should only be owned by trusted users (often root)
+
+## Learning Outcomes
+- Understanding setuid permissions
+- Using special permission bits
+- Privilege escalation concepts
+- File permission analysis
+- Running commands with elevated privileges
+
+## Tips for Future Levels
+- Always check file permissions with `ls -l`
+- Understand special permission bits (setuid, setgid, sticky)
+- Look for setuid binaries when you need elevated access
+- Test binaries without arguments to see usage
+- `whoami` and `id` are great for verifying effective user
+
+## Quick Reference
+
+### Permission Notation
+
+**Symbolic:**
+- `s` in owner execute position = setuid (4000)
+- `s` in group execute position = setgid (2000)
+- `t` in others execute position = sticky bit (1000)
+
+**Numeric (Octal):**
+- 4000 = setuid
+- 2000 = setgid
+- 1000 = sticky bit
+- 0755 = standard executable (rwxr-xr-x)
+- 4755 = setuid executable (rwsr-xr-x)
+
+### Special Permission Commands
+```bash
+ls -l filename              # Check permissions
+chmod u+s filename          # Add setuid
+chmod g+s filename          # Add setgid
+chmod +t directory          # Add sticky bit
+chmod 4755 filename         # Setuid with numeric mode
+find / -perm -4000          # Find setuid files
+find / -perm -2000          # Find setgid files
+```
+
+### Checking Effective Permissions
+```bash
+id                          # Show your user and group IDs
+whoami                      # Show effective username
+groups                      # Show group memberships
+```
+
+## Real-World Applications
+
+### Legitimate Uses of Setuid
+- `passwd` - Allows users to change passwords (needs root to write to `/etc/shadow`)
+- `sudo` - Executes commands as another user
+- `ping` - Needs raw socket access (historically)
+
+### Security Considerations
+- Minimize setuid binaries
+- Audit regularly for security issues
+- Never make shell scripts setuid (unsafe)
+- Prefer `sudo` for controlled privilege escalation
+
+## Common Setuid Binaries
+```bash
+/usr/bin/passwd    # Change passwords
+/usr/bin/sudo      # Execute as another user
+/usr/bin/su        # Switch user
+```
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Linux File Permissions](https://www.guru99.com/file-permissions.html)
+- [Understanding Setuid](https://www.redhat.com/sysadmin/suid-sgid-sticky-bit)
+- [Setuid Security](https://www.hackingarticles.in/linux-privilege-escalation-using-suid-binaries/)
+
+---
+
+**Next Challenge:** Level 20 → Level 21 (Network connections and setuid)
+
+Good luck! 🔐
