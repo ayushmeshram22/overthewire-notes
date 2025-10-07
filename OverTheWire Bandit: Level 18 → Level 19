@@ -1,0 +1,209 @@
+# OverTheWire Bandit: Level 18 → Level 19
+
+## Objective
+Find the password for Level 19. The password is stored in **readme** in the home directory. However, someone has modified **.bashrc** to log you out when you log in with SSH.
+
+## Challenge Details
+- **Current Level:** bandit18
+- **Target Level:** bandit19
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **File Location:** ~/readme
+- **Problem:** .bashrc logs you out immediately upon login
+
+## The Problem
+When you try to SSH into bandit18, you are immediately logged out before you can execute any commands. The `.bashrc` file has been modified to automatically log you out. You need to read the `readme` file without an interactive shell session.
+
+## Solutions
+
+### Method 1: Execute Command via SSH (Recommended)
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220 cat readme
+```
+
+### Method 2: Specify Shell-less Command
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220 "cat ~/readme"
+```
+
+### Method 3: Using Bash Without .bashrc
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220 "bash --norc --noprofile -c 'cat readme'"
+```
+
+### Method 4: Use Different Shell
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220 /bin/sh
+```
+Then execute: `cat readme`
+
+## Walkthrough
+
+1. **Try normal SSH login (will fail):**
+   ```bash
+   ssh bandit18@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter password from Level 17.
+   
+   Result: `Byebye !` (immediately logged out)
+
+2. **Read the file directly via SSH:**
+   ```bash
+   ssh bandit18@bandit.labs.overthewire.org -p 2220 cat readme
+   ```
+   Enter the password when prompted.
+
+3. **The password will be displayed immediately**
+
+4. **Copy the password**
+
+5. **Connect to Level 19:**
+   ```bash
+   ssh bandit19@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### What is .bashrc?
+- Configuration file for Bash shell
+- Executed every time you start an interactive shell
+- Can contain aliases, functions, environment variables
+- Located at `~/.bashrc`
+
+### How SSH Command Execution Works
+When you append a command to SSH:
+```bash
+ssh user@host command
+```
+SSH:
+1. Connects to the server
+2. Authenticates
+3. Executes the command
+4. Returns output
+5. Closes connection
+
+The command runs **before** starting an interactive shell, so `.bashrc` doesn't interfere (or runs differently).
+
+### Interactive vs Non-Interactive Shells
+
+**Interactive Shell:**
+- You type commands and get responses
+- `.bashrc` is executed
+- Has a prompt (e.g., `bandit18@bandit:~$`)
+
+**Non-Interactive Shell:**
+- Executes commands and exits
+- `.bashrc` may not be fully executed
+- No prompt
+
+## Common Mistakes
+- ❌ Trying to log in normally repeatedly
+- ❌ Not understanding SSH can execute commands directly
+- ❌ Forgetting to specify the port (`-p 2220`)
+- ❌ Trying to edit `.bashrc` (you can't access it)
+- ❌ Not reading the level description carefully
+
+## Alternative Approaches
+
+### Method 1: Use ls First to Verify
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220 ls
+```
+Confirms the `readme` file exists.
+
+### Method 2: Multiple Commands
+```bash
+ssh bandit18@bandit.labs.overthewire.org -p 2220 "ls -la && cat readme"
+```
+Lists files AND reads the password.
+
+### Method 3: SCP (Secure Copy)
+```bash
+scp -P 2220 bandit18@bandit.labs.overthewire.org:readme ./readme
+cat readme
+```
+Copies the file to your local machine.
+
+### Method 4: SFTP
+```bash
+sftp -P 2220 bandit18@bandit.labs.overthewire.org
+get readme
+quit
+cat readme
+```
+
+### Method 5: Force Terminal Allocation
+```bash
+ssh -t bandit18@bandit.labs.overthewire.org -p 2220 bash --noprofile --norc
+```
+
+## Understanding the Attack
+
+### What Was Modified?
+The `.bashrc` file likely contains:
+```bash
+echo "Byebye !"
+exit
+```
+Or similar code that terminates the session.
+
+### Why Does Direct Command Work?
+- Commands passed to SSH run in a different context
+- `.bashrc` isn't fully sourced for non-interactive commands
+- Or the command completes before `.bashrc` exit takes effect
+
+## Learning Outcomes
+- SSH can execute commands without interactive login
+- Understanding `.bashrc` and shell initialization
+- Difference between interactive and non-interactive shells
+- Remote command execution via SSH
+- Problem-solving when normal access is blocked
+
+## Tips for Future Levels
+- Remember SSH can run commands: `ssh user@host command`
+- Always read level descriptions carefully
+- Think outside the box when normal methods fail
+- Understand shell initialization files
+- Learn multiple ways to access remote systems
+
+## Quick Reference
+
+### SSH Command Execution
+```bash
+ssh user@host command              # Execute single command
+ssh user@host "cmd1; cmd2"         # Multiple commands (semicolon)
+ssh user@host "cmd1 && cmd2"       # Execute cmd2 only if cmd1 succeeds
+ssh user@host 'cmd with $vars'     # Single quotes prevent local expansion
+ssh -t user@host command           # Force pseudo-terminal allocation
+```
+
+### SSH Options
+```bash
+-p port         # Specify port
+-t              # Force pseudo-terminal allocation
+-T              # Disable pseudo-terminal allocation
+-N              # Don't execute remote command
+-f              # Background SSH
+```
+
+### Shell Initialization Files
+
+**Bash:**
+- `/etc/profile` - System-wide, login shells
+- `~/.bash_profile` - User, login shells
+- `~/.bashrc` - User, interactive non-login shells
+- `~/.bash_logout` - User, logout
+
+**Execution Order:**
+1. Login shell: `.bash_profile` → `.bashrc`
+2. Non-login interactive: `.bashrc`
+3. Non-interactive: Usually nothing (or minimal)
+
+## Real-World Applications
+
+### When This Technique Is Useful
+- Compromised `.bashrc` or shell configuration
+- Automated remote command execution
+- Scripts and automation
+- Restricted
