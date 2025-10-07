@@ -1,0 +1,323 @@
+# OverTheWire Bandit: Level 22 → Level 23
+
+## Objective
+Find the password for Level 23. A program is running automatically at regular intervals from **cron**. Look in **/etc/cron.d/** for the configuration and see what command is being executed. This time, the script uses your username to determine the output file.
+
+## Challenge Details
+- **Current Level:** bandit22
+- **Target Level:** bandit23
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Cron Directory:** /etc/cron.d/
+- **Key Concept:** Understanding bash scripting and command substitution
+
+## The Problem
+The cron job script uses a dynamic filename based on the username. You need to understand the script logic to determine where bandit23's password is stored.
+
+## Solutions
+
+### Method 1: Trace Script Logic (Recommended)
+```bash
+# 1. Read the cron job
+cat /etc/cron.d/cronjob_bandit23
+
+# 2. Examine the script
+cat /usr/bin/cronjob_bandit23.sh
+
+# 3. Manually compute the hash for bandit23
+echo I am user bandit23 | md5sum | cut -d ' ' -f 1
+
+# 4. Read the password from computed location
+cat /tmp/8ca319486bfbbc3663ea0fbe81326349
+```
+
+### Method 2: Execute Script Logic Directly
+```bash
+myname=bandit23
+echo I am user $myname | md5sum | cut -d ' ' -f 1
+cat /tmp/$(echo I am user bandit23 | md5sum | cut -d ' ' -f 1)
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit22@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 21.
+
+2. **Check the cron directory:**
+   ```bash
+   ls /etc/cron.d/
+   cat /etc/cron.d/cronjob_bandit23
+   ```
+   
+   Output:
+   ```
+   @reboot bandit23 /usr/bin/cronjob_bandit23.sh &> /dev/null
+   * * * * * bandit23 /usr/bin/cronjob_bandit23.sh &> /dev/null
+   ```
+
+3. **Read the script:**
+   ```bash
+   cat /usr/bin/cronjob_bandit23.sh
+   ```
+   
+   Output:
+   ```bash
+   #!/bin/bash
+   
+   myname=$(whoami)
+   mytarget=$(echo I am user $myname | md5sum | cut -d ' ' -f 1)
+   
+   echo "Copying passwordfile /etc/bandit_pass/$myname to /tmp/$mytarget"
+   
+   cat /etc/bandit_pass/$myname > /tmp/$mytarget
+   ```
+
+4. **Understand the script:**
+   - `myname=$(whoami)` gets the username (will be "bandit23" when cron runs it)
+   - `mytarget=$(echo I am user $myname | md5sum | cut -d ' ' -f 1)` creates MD5 hash
+   - Password is copied to `/tmp/$mytarget`
+
+5. **Calculate the hash for bandit23:**
+   ```bash
+   echo I am user bandit23 | md5sum | cut -d ' ' -f 1
+   ```
+   
+   Output: `8ca319486bfbbc3663ea0fbe81326349`
+
+6. **Read the password:**
+   ```bash
+   cat /tmp/8ca319486bfbbc3663ea0fbe81326349
+   ```
+
+7. **Copy the password displayed**
+
+8. **Exit and connect to Level 23:**
+   ```bash
+   exit
+   ssh bandit23@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### Command Substitution
+```bash
+$(command)          # Modern syntax
+`command`           # Old syntax (backticks)
+```
+Executes the command and replaces it with its output.
+
+### The whoami Command
+Returns the current username.
+```bash
+whoami              # Shows effective username
+```
+
+### MD5 Hash
+- **MD5** (Message Digest 5) is a cryptographic hash function
+- Produces 128-bit (32 hexadecimal characters) hash
+- Same input always produces same output
+- Used here to create predictable but obscure filenames
+
+### Understanding the Script Flow
+
+**When cron runs as bandit23:**
+1. `myname=$(whoami)` → `myname="bandit23"`
+2. `echo I am user bandit23` → produces string
+3. `md5sum` → computes hash: `8ca319486bfbbc3663ea0fbe81326349`
+4. `cut -d ' ' -f 1` → extracts just the hash (removes filename)
+5. Password copied to `/tmp/8ca319486bfbbc3663ea0fbe81326349`
+
+## Common Mistakes
+- ❌ Running `whoami` as bandit22 and getting wrong username
+- ❌ Not understanding command substitution
+- ❌ Forgetting to use "bandit23" when computing the hash
+- ❌ Computing hash for bandit22 instead of bandit23
+- ❌ Not understanding the script logic before trying commands
+- ❌ Including extra spaces in the echo command
+
+## Understanding Command Substitution in Detail
+
+### What Happens Step by Step
+```bash
+myname=$(whoami)
+```
+1. Shell executes `whoami` command
+2. Captures the output ("bandit23")
+3. Assigns it to variable `myname`
+
+```bash
+mytarget=$(echo I am user $myname | md5sum | cut -d ' ' -f 1)
+```
+1. `$myname` expands to "bandit23"
+2. `echo I am user bandit23` produces the string
+3. Pipes to `md5sum` which produces hash + filename
+4. `cut -d ' ' -f 1` extracts first field (the hash)
+5. Result stored in `mytarget`
+
+### Testing Each Component
+```bash
+# Step 1: What username will cron use?
+# When cron runs the script as bandit23:
+echo "bandit23"
+
+# Step 2: What string is being hashed?
+echo I am user bandit23
+
+# Step 3: What's the MD5 hash?
+echo I am user bandit23 | md5sum
+
+# Step 4: Extract just the hash
+echo I am user bandit23 | md5sum | cut -d ' ' -f 1
+
+# Step 5: Read the file
+cat /tmp/$(echo I am user bandit23 | md5sum | cut -d ' ' -f 1)
+```
+
+## Alternative Approaches
+
+### Method 1: Create a Test Script
+```bash
+cat > /tmp/test_hash.sh << 'EOF'
+#!/bin/bash
+myname="bandit23"
+mytarget=$(echo I am user $myname | md5sum | cut -d ' ' -f 1)
+echo "Hash for $myname: $mytarget"
+EOF
+
+chmod +x /tmp/test_hash.sh
+/tmp/test_hash.sh
+```
+
+### Method 2: Check All MD5 Files in /tmp
+```bash
+ls -la /tmp/ | grep -E '^-.*[a-f0-9]{32}$'
+```
+Lists files that look like MD5 hashes.
+
+### Method 3: Try Different Usernames
+```bash
+for user in bandit22 bandit23 bandit24; do
+    hash=$(echo I am user $user | md5sum | cut -d ' ' -f 1)
+    echo "$user -> $hash"
+    ls -la /tmp/$hash 2>/dev/null
+done
+```
+
+## Learning Outcomes
+- Understanding command substitution in bash
+- Working with MD5 hashes
+- Variable expansion in shell scripts
+- Following complex script logic
+- Debugging bash scripts step by step
+- Understanding how cron executes with different user contexts
+
+## Tips for Future Levels
+- Always simulate script execution with the target user
+- Break down complex commands into individual steps
+- Understand what `$(command)` does
+- Remember that cron runs as the specified user
+- Test each part of a pipeline separately
+- Pay attention to variable expansion
+
+## Quick Reference
+
+### Command Substitution
+```bash
+var=$(command)              # Capture command output
+var=$(command1 | command2)  # Capture pipeline output
+var=`command`               # Old style (avoid)
+```
+
+### MD5 Operations
+```bash
+md5sum file                 # Hash a file
+echo "text" | md5sum        # Hash text
+md5sum <<< "text"          # Here-string syntax
+echo -n "text" | md5sum     # Hash without newline
+```
+
+### cut Command
+```bash
+cut -d ' ' -f 1            # Cut by space, field 1
+cut -d ':' -f 1,3          # Cut by colon, fields 1 and 3
+cut -c 1-10                # Cut characters 1-10
+```
+
+### Useful Bash Variables
+```bash
+$USER                       # Current username
+$(whoami)                   # Current effective username
+$HOME                       # Home directory
+$PWD                        # Current directory
+$$                          # Process ID
+$?                          # Last command exit status
+```
+
+## Understanding Hashing
+
+### What is MD5?
+- Produces fixed-length 128-bit output (32 hex chars)
+- Deterministic (same input → same output)
+- One-way function (can't reverse)
+- Fast to compute
+- **Not secure** for cryptography (but fine for this use case)
+
+### Example MD5 Hashes
+```bash
+echo "hello" | md5sum
+# b1946ac92492d2347c6235b4d2611184
+
+echo "world" | md5sum
+# 591785b794601e212b260e25925636fd
+
+echo "I am user bandit23" | md5sum
+# 8ca319486bfbbc3663ea0fbe81326349
+```
+
+## Script Analysis Process
+
+### Step-by-Step Analysis
+1. **Identify**: What does the script do?
+2. **Variables**: What variables are used?
+3. **Input**: What determines the output?
+4. **Execution Context**: Who runs it?
+5. **Output**: Where is data written?
+6. **Simulate**: Run the logic manually
+
+### Questions to Ask
+- Who executes this script? (Check cron job)
+- What user context matters? (`whoami` result)
+- What's the exact string being hashed?
+- Where is the output file?
+- Can I read that file?
+
+## Real-World Applications
+
+### Dynamic Filenames
+Used for:
+- Session IDs
+- Temporary files
+- Cache keys
+- User-specific data storage
+
+### Security Implications
+- Predictable but obscure filenames
+- Information disclosure if permissions wrong
+- Cron jobs can leak data
+- Always audit scheduled tasks
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Bash Command Substitution](https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html)
+- [MD5 Hash Generator](https://www.md5hashgenerator.com/)
+- [Bash Scripting Guide](https://tldp.org/LDP/abs/html/)
+
+---
+
+**Next Challenge:** Level 23 → Level 24 (Writing your own cron script)
+
+Good luck! 🔐
