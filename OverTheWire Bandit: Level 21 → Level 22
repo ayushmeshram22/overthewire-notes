@@ -1,0 +1,282 @@
+# OverTheWire Bandit: Level 21 → Level 22
+
+## Objective
+Find the password for Level 22. A program is running automatically at regular intervals from **cron**, the time-based job scheduler. Look in **/etc/cron.d/** for the configuration and see what command is being executed.
+
+## Challenge Details
+- **Current Level:** bandit21
+- **Target Level:** bandit22
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Cron Directory:** /etc/cron.d/
+- **Key Concept:** Understanding cron jobs
+
+## The Problem
+You need to find what automated task is running for bandit22, examine the script it executes, and find where the password is being stored.
+
+## Solutions
+
+### Method 1: Step-by-Step Investigation (Recommended)
+```bash
+# 1. List cron jobs
+ls -la /etc/cron.d/
+
+# 2. Read the bandit22 cron job
+cat /etc/cron.d/cronjob_bandit22
+
+# 3. Examine the script it runs
+cat /usr/bin/cronjob_bandit22.sh
+
+# 4. Read the password from the output location
+cat /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+```
+
+### Method 2: One-Liner Chain
+```bash
+cat $(cat /etc/cron.d/cronjob_bandit22 | grep -oP '/usr/bin/\S+') | grep -oP '/tmp/\S+' | xargs cat
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit21@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 20.
+
+2. **Navigate to cron directory:**
+   ```bash
+   cd /etc/cron.d/
+   ls -la
+   ```
+   Output shows various cron jobs including `cronjob_bandit22`
+
+3. **Read the bandit22 cron job:**
+   ```bash
+   cat /etc/cron.d/cronjob_bandit22
+   ```
+   
+   Output:
+   ```
+   @reboot bandit22 /usr/bin/cronjob_bandit22.sh &> /dev/null
+   * * * * * bandit22 /usr/bin/cronjob_bandit22.sh &> /dev/null
+   ```
+
+4. **Examine the script:**
+   ```bash
+   cat /usr/bin/cronjob_bandit22.sh
+   ```
+   
+   Output:
+   ```bash
+   #!/bin/bash
+   chmod 644 /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+   cat /etc/bandit_pass/bandit22 > /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+   ```
+
+5. **Read the password file:**
+   ```bash
+   cat /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+   ```
+
+6. **Copy the password displayed**
+
+7. **Exit and connect to Level 22:**
+   ```bash
+   exit
+   ssh bandit22@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just found.
+
+## Key Concepts
+
+### What is Cron?
+**Cron** is a time-based job scheduler in Unix-like systems. It runs commands or scripts automatically at specified times.
+
+### Cron Configuration Locations
+- `/etc/crontab` - System-wide crontab
+- `/etc/cron.d/` - Additional cron job files
+- `/var/spool/cron/` - User-specific crontabs
+- `/etc/cron.daily/` - Daily scripts
+- `/etc/cron.hourly/` - Hourly scripts
+- `/etc/cron.monthly/` - Monthly scripts
+- `/etc/cron.weekly/` - Weekly scripts
+
+### Cron Syntax
+```
+* * * * * user command
+│ │ │ │ │
+│ │ │ │ └─── Day of week (0-7, Sunday=0 or 7)
+│ │ │ └───── Month (1-12)
+│ │ └─────── Day of month (1-31)
+│ └───────── Hour (0-23)
+└─────────── Minute (0-59)
+```
+
+### Special Cron Symbols
+- `*` - Any value
+- `,` - List separator (e.g., `1,3,5`)
+- `-` - Range (e.g., `1-5`)
+- `/` - Step values (e.g., `*/5` = every 5 units)
+- `@reboot` - Run at startup
+- `@daily` - Run once per day
+- `@hourly` - Run once per hour
+
+## Common Mistakes
+- ❌ Not checking /etc/cron.d/ directory
+- ❌ Only looking at the cron file without examining the script
+- ❌ Not understanding what the script does
+- ❌ Trying to read /etc/bandit_pass/bandit22 directly (no permission)
+- ❌ Not noticing the temporary file location
+
+## Understanding the Script
+
+### Script Breakdown
+```bash
+#!/bin/bash
+# Sets permissions to 644 (readable by all)
+chmod 644 /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+
+# Copies password to temp file
+cat /etc/bandit_pass/bandit22 > /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv
+```
+
+### Why This Works
+1. Script runs as `bandit22` (due to cron configuration)
+2. `bandit22` can read its own password
+3. Script writes password to `/tmp/` with world-readable permissions
+4. You (bandit21) can read the temp file
+
+### Output Redirection in Cron
+```
+&> /dev/null
+```
+- `&>` redirects both stdout and stderr
+- `/dev/null` discards all output
+- Prevents email notifications from cron
+
+## Alternative Approaches
+
+### Method 1: Check All Cron Jobs
+```bash
+ls /etc/cron.d/
+cat /etc/cron.d/cronjob_bandit*
+```
+
+### Method 2: Search for Temp Files
+```bash
+ls -la /tmp/ | grep bandit
+```
+
+### Method 3: Monitor Script Execution
+```bash
+watch -n 1 'ls -la /tmp/t7O6lds9S0RqQh9aMcz6ShpAoZKF7fgv'
+```
+Watches file modification in real-time.
+
+### Method 4: Find Recently Modified Files
+```bash
+find /tmp -user bandit22 -type f 2>/dev/null
+```
+
+## Learning Outcomes
+- Understanding cron job scheduling
+- Reading and interpreting crontab syntax
+- Analyzing shell scripts
+- Understanding file permissions in /tmp
+- Following execution flow from cron to script to output
+
+## Tips for Future Levels
+- Always check `/etc/cron.d/` for automated tasks
+- Read the scripts that cron jobs execute
+- Understand what user runs each cron job
+- Look for temporary files in `/tmp/`
+- Trace the execution flow step by step
+
+## Quick Reference
+
+### Cron Time Examples
+```bash
+* * * * *           # Every minute
+0 * * * *           # Every hour
+0 0 * * *           # Every day at midnight
+0 0 * * 0           # Every Sunday at midnight
+0 0 1 * *           # First day of month at midnight
+*/5 * * * *         # Every 5 minutes
+0 9-17 * * *        # Every hour from 9 AM to 5 PM
+0 9 * * 1-5         # 9 AM on weekdays
+@reboot             # At system startup
+@daily              # Once per day (same as 0 0 * * *)
+@hourly             # Once per hour (same as 0 * * * *)
+```
+
+### Cron Management Commands
+```bash
+crontab -l          # List your cron jobs
+crontab -e          # Edit your cron jobs
+crontab -r          # Remove all your cron jobs
+crontab -u user -l  # List another user's cron jobs (requires permission)
+```
+
+### Checking Cron Configuration
+```bash
+ls -la /etc/cron.d/              # System cron jobs
+cat /etc/crontab                 # System crontab
+ls /etc/cron.{daily,hourly,weekly,monthly}/  # Scheduled directories
+cat /var/log/syslog | grep CRON  # Cron execution logs (if accessible)
+```
+
+### File Permission Reminder
+```bash
+chmod 644 file      # rw-r--r-- (owner: rw, group: r, others: r)
+chmod 755 file      # rwxr-xr-x (owner: rwx, group: rx, others: rx)
+chmod 600 file      # rw------- (owner: rw, group: none, others: none)
+```
+
+## Real-World Applications
+
+### Common Cron Uses
+- **Backups**: Automated daily/weekly backups
+- **Log rotation**: Cleaning old log files
+- **System maintenance**: Updates, cleanup
+- **Monitoring**: Health checks, alerts
+- **Data processing**: ETL jobs, reports
+
+### Security Considerations
+- Cron jobs run with user privileges
+- Scripts should validate input
+- Avoid storing sensitive data in predictable locations
+- Use proper file permissions
+- Log important cron activities
+
+## Debugging Cron Jobs
+
+### Common Issues
+- **Permissions**: Cron runs with limited environment
+- **PATH**: May not include all directories
+- **Environment Variables**: Often missing
+- **Working Directory**: May not be what you expect
+
+### Testing Cron Jobs
+```bash
+# Test script manually first
+/path/to/script.sh
+
+# Add logging to script
+echo "$(date): Started" >> /tmp/cronlog.txt
+
+# Check system logs
+grep CRON /var/log/syslog
+```
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Cron How-To](https://help.ubuntu.com/community/CronHowto)
+- [Crontab Guru](https://crontab.guru/) - Interactive cron schedule expression editor
+- [Linux Cron Tutorial](https://www.adminschoice.com/crontab-quick-reference)
+
+---
+
+**Next Challenge:** Level 22 → Level 23 (Advanced cron job analysis)
+
+Good luck! ⏰
