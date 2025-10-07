@@ -1,0 +1,302 @@
+# OverTheWire Bandit: Level 20 → Level 21
+
+## Objective
+Find the password for Level 21. There is a setuid binary in the home directory that connects to localhost on a port you specify. It reads text from the connection and compares it to the password in `/etc/bandit_pass/bandit20`. If correct, it transmits the password for bandit21.
+
+## Challenge Details
+- **Current Level:** bandit20
+- **Target Level:** bandit21
+- **Server:** bandit.labs.overthewire.org
+- **Port:** 2220
+- **Binary Location:** ~/suconnect
+- **Current Password Location:** /etc/bandit_pass/bandit20
+
+## The Problem
+You need to:
+1. Set up a listener on a port that sends the current password (bandit20)
+2. Run the setuid binary to connect to that port
+3. The binary will read the password, verify it, and send back the next password (bandit21)
+
+## Solutions
+
+### Method 1: Using netcat in Background (Recommended)
+```bash
+# Terminal session 1 (or background process):
+cat /etc/bandit_pass/bandit20 | nc -l -p 12345 &
+
+# Then run the binary:
+./suconnect 12345
+```
+
+### Method 2: Two Terminal Sessions
+**Terminal 1:**
+```bash
+ssh bandit20@bandit.labs.overthewire.org -p 2220
+nc -l -p 12345 < /etc/bandit_pass/bandit20
+```
+
+**Terminal 2:**
+```bash
+ssh bandit20@bandit.labs.overthewire.org -p 2220
+./suconnect 12345
+```
+
+### Method 3: Using tmux/screen
+```bash
+# Start tmux
+tmux
+
+# In first pane:
+nc -l -p 12345 < /etc/bandit_pass/bandit20
+
+# Split pane (Ctrl+b, then ")
+# In second pane:
+./suconnect 12345
+```
+
+## Walkthrough
+
+1. **Connect to the server:**
+   ```bash
+   ssh bandit20@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password obtained from Level 19.
+
+2. **Examine the binary:**
+   ```bash
+   ls -la
+   ./suconnect
+   ```
+   Usage message shows it needs a port number.
+
+3. **Check current password:**
+   ```bash
+   cat /etc/bandit_pass/bandit20
+   ```
+   Save this - you'll need to send it to the binary.
+
+4. **Set up a listener in background:**
+   ```bash
+   echo "VxCazJaVykI6W36BkBU0mJTCM8rR95XT" | nc -l -p 12345 &
+   ```
+   (Replace with your actual password)
+   
+   Or use file directly:
+   ```bash
+   cat /etc/bandit_pass/bandit20 | nc -l -p 12345 &
+   ```
+
+5. **Check background job:**
+   ```bash
+   jobs
+   ```
+   Should show `[1]+ Running`
+
+6. **Connect with the binary:**
+   ```bash
+   ./suconnect 12345
+   ```
+   
+   Output:
+   ```
+   Read: [your_bandit20_password]
+   Password matches, sending next password
+   [bandit21_password]
+   ```
+
+7. **Copy the bandit21 password**
+
+8. **Clean up (optional):**
+   ```bash
+   jobs
+   kill %1  # Kill background job if still running
+   ```
+
+9. **Exit and connect to Level 21:**
+   ```bash
+   exit
+   ssh bandit21@bandit.labs.overthewire.org -p 2220
+   ```
+   Enter the password you just received.
+
+## Key Concepts
+
+### Netcat (nc)
+Swiss Army knife for network connections.
+
+**Common options:**
+- `-l` : Listen mode (act as server)
+- `-p port` : Specify port number
+- `-v` : Verbose output
+- `-n` : No DNS lookup
+
+### Background Processes
+```bash
+command &           # Run in background
+jobs               # List background jobs
+fg %1              # Bring job 1 to foreground
+bg %1              # Resume job 1 in background
+kill %1            # Kill job 1
+```
+
+### Network Communication Flow
+
+1. **Server (nc listener):**
+   - Listens on port 12345
+   - Sends bandit20 password when connected
+   - Receives response
+
+2. **Client (suconnect):**
+   - Connects to localhost:12345
+   - Reads the password sent by listener
+   - Verifies it matches bandit20's password
+   - Sends back bandit21's password if valid
+
+## Common Mistakes
+- ❌ Not setting up the listener first
+- ❌ Using a port already in use
+- ❌ Forgetting to run listener in background
+- ❌ Not sending the correct current password
+- ❌ Mixing up port numbers
+- ❌ Not killing background job (leaves port open)
+
+## Alternative Approaches
+
+### Method 1: Using Python HTTP Server
+```bash
+# Create a file with password
+cat /etc/bandit_pass/bandit20 > pass.txt
+
+# Start simple server
+while true; do cat pass.txt | nc -l -p 12345; done &
+
+# Connect
+./suconnect 12345
+```
+
+### Method 2: Using socat
+```bash
+socat TCP-LISTEN:12345,reuseaddr,fork EXEC:'cat /etc/bandit_pass/bandit20' &
+./suconnect 12345
+```
+
+### Method 3: Manual Two-Step
+```bash
+# Step 1: Start listener
+nc -l -p 12345 &
+
+# Step 2: Send password to listener manually (if needed)
+# Step 3: Connect with binary
+./suconnect 12345
+```
+
+### Method 4: Using Named Pipes (FIFO)
+```bash
+mkfifo /tmp/myfifo
+cat /etc/bandit_pass/bandit20 > /tmp/myfifo | nc -l -p 12345 &
+./suconnect 12345
+```
+
+## Understanding the Setup
+
+### Why Two Connections?
+The binary needs:
+1. **Input**: Current password to verify you're authorized
+2. **Output**: Next password as reward for correct input
+
+This simulates:
+- Client-server authentication
+- Network-based password exchange
+- Automated credential verification
+
+### Port Selection
+- Use ports above 1024 (non-privileged)
+- Common choices: 12345, 31337, 4444, 8080
+- Check if port is in use: `ss -tuln | grep PORT`
+
+## Learning Outcomes
+- Using netcat for network communication
+- Setting up TCP listeners
+- Background process management
+- Client-server interaction
+- Network-based authentication
+- Multi-terminal/session management
+
+## Tips for Future Levels
+- Learn netcat thoroughly - it's essential for CTFs
+- Practice background job control
+- Understand TCP/IP basics
+- Master tmux or screen for multiple sessions
+- Always check if ports are in use
+
+## Quick Reference
+
+### Netcat Commands
+```bash
+nc -l -p PORT              # Listen on port
+nc HOST PORT               # Connect to host:port
+nc -l -p PORT < file       # Send file content
+nc -l -p PORT > file       # Receive to file
+nc -l -p PORT -e /bin/bash # Bind shell (dangerous!)
+nc -v HOST PORT            # Verbose connection
+```
+
+### Background Job Control
+```bash
+command &                  # Run in background
+jobs                       # List jobs
+jobs -l                    # List with PID
+fg                         # Bring last job to foreground
+fg %N                      # Bring job N to foreground
+bg %N                      # Resume job N in background
+kill %N                    # Kill job N
+kill -9 %N                 # Force kill job N
+disown %N                  # Detach job from shell
+```
+
+### Port Checking
+```bash
+ss -tuln | grep PORT       # Check if port is in use
+netstat -tuln | grep PORT  # Alternative
+lsof -i :PORT             # Show what's using port
+```
+
+### tmux Quick Reference
+```bash
+tmux                       # Start new session
+Ctrl+b "                   # Split horizontal
+Ctrl+b %                   # Split vertical
+Ctrl+b arrow               # Navigate panes
+Ctrl+b d                   # Detach session
+tmux attach                # Reattach session
+```
+
+## Network Communication Diagram
+
+```
+┌─────────────────────┐         ┌──────────────────────┐
+│   nc listener       │         │   suconnect          │
+│   (port 12345)      │         │   (setuid binary)    │
+│                     │         │                      │
+│ Sends: bandit20 pwd │◄───────►│ Connects to :12345   │
+│                     │         │ Reads password       │
+│ Receives: nothing   │         │ Verifies against     │
+│                     │         │ /etc/bandit_pass/    │
+│                     │         │ bandit20             │
+│                     │         │                      │
+│                     │         │ If match:            │
+│                     │◄────────┤ Sends bandit21 pwd   │
+└─────────────────────┘         └──────────────────────┘
+```
+
+## Resources
+- [OverTheWire Bandit](https://overthewire.org/wargames/bandit/)
+- [Netcat Cheat Sheet](https://www.sans.org/security-resources/sec560/netcat_cheat_sheet_v1.pdf)
+- [Linux Background Jobs](https://www.digitalocean.com/community/tutorials/how-to-use-bash-s-job-control-to-manage-foreground-and-background-processes)
+- [tmux Guide](https://tmuxcheatsheet.com/)
+
+---
+
+**Next Challenge:** Level 21 → Level 22 (Cron jobs)
+
+Good luck! 🌐
