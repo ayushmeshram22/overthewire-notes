@@ -1,0 +1,122 @@
+OverTheWire Bandit: Level 25 → Level 26
+This is one of the trickier levels! It involves exploiting a custom shell and using vi/vim in an unusual way.
+
+Initial Reconnaissance
+First, let's see what we have:
+
+bash
+ls -la
+cat bandit26.sshkey
+You'll find an SSH private key for bandit26. Let's try to use it:
+
+bash
+ssh -i bandit26.sshkey bandit26@localhost -p 2220
+Problem: The connection immediately closes! You get logged out right away.
+
+Investigation
+Let's find out what shell bandit26 is using:
+
+bash
+cat /etc/passwd | grep bandit26
+You'll see something like:
+
+bandit26:x:11026:11026:bandit level 26:/home/bandit26:/usr/bin/showtext
+Notice that instead of /bin/bash, bandit26 uses /usr/bin/showtext as their shell!
+
+Let's examine this custom shell:
+
+bash
+cat /usr/bin/showtext
+You'll see:
+
+bash
+#!/bin/sh
+export TERM=linux
+exec more ~/text.txt
+exit 0
+The shell just displays a text file using more and then exits!
+
+The Solution Strategy
+The key insight: more is a pager that only pauses if the content is larger than your terminal window. If we make our terminal very small, more will pause, and we can exploit more's command mode to spawn a shell!
+
+Step-by-Step Solution
+Make your terminal window VERY small (resize it to just a few lines tall)
+The goal is to make the ASCII art in text.txt not fit in the window
+This forces more to pause and wait for input
+SSH into bandit26 with the small terminal:
+bash
+ssh -i bandit26.sshkey bandit26@localhost -p 2220
+When more pauses (you'll see output stopped), press v
+This opens the file in vi/vim editor
+You're now in vim as bandit26!
+Inside vim, set the shell to bash:
+vim
+:set shell=/bin/bash
+Spawn a shell from vim:
+vim
+:shell
+Now you have a proper shell as bandit26! Get the password:
+bash
+cat /etc/bandit_pass/bandit26
+Alternative Method (Using vim commands directly)
+Once you're in vim (after pressing v in more):
+
+vim
+:e /etc/bandit_pass/bandit26
+This opens the password file directly in vim.
+
+Detailed Walkthrough
+Method 1: Via Shell
+Resize terminal to ~5 lines tall
+ssh -i bandit26.sshkey bandit26@localhost -p 2220
+Press v when more pauses
+In vim: :set shell=/bin/bash
+In vim: :shell
+In bash: cat /etc/bandit_pass/bandit26
+Method 2: Direct File Access
+Resize terminal to ~5 lines tall
+ssh -i bandit26.sshkey bandit26@localhost -p 2220
+Press v when more pauses
+In vim: :e /etc/bandit_pass/bandit26
+Read the password from vim
+Key Concepts
+Custom Shells: Users can have programs other than bash as their login shell
+Pager Exploitation: Using features of more/less to escape to editors
+Vim Shell Escape: Vim can spawn shells and execute commands
+Terminal Size Manipulation: Making the terminal small forces pagers to pause
+Important Tips
+Terminal must be SMALL - this is crucial! If more doesn't pause, the exploit won't work
+You can use v in more to enter vim
+You can also use :r /etc/bandit_pass/bandit26 in vim to read the file
+Practice resizing your terminal before attempting
+Troubleshooting
+Problem: Connection closes immediately
+
+Solution: Your terminal is too large. Make it smaller (3-6 lines tall)
+Problem: Can't enter vim
+
+Solution: Make sure you press v while more is paused (showing the --More-- prompt)
+Problem: Vim commands don't work
+
+Solution: Make sure you're in command mode (press Esc first, then type :)
+Why This Works
+showtext script uses more to display content
+more only pauses if content exceeds terminal height
+When paused, more allows entering vim with v
+Vim can execute shell commands or read arbitrary files
+This bypasses the intended shell restriction
+Bonus: Preparing for Level 27
+While you have shell access as bandit26, you might want to explore for the next level:
+
+bash
+ls -la
+# Look for any interesting files or SUID binaries
+What You'll Learn
+Restricted shell bypass techniques
+Vim/Vi command execution
+Pager command modes
+Creative problem solving in constrained environments
+Terminal manipulation techniques
+This level teaches important security concepts about shell restrictions and why proper sandboxing is crucial! 🎯
+
+
